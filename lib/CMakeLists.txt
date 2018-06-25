@@ -1,0 +1,12 @@
+if(HDF5_PARALLEL_COMPRESSION)
+	set(OBJS comms/commVars.cpp comms/comms.cpp random/random.cpp utils/logger.cpp utils/memAlloc.cpp utils/misc.cpp utils/profiler.cpp)
+else()
+	set(OBJS comms/commVars.cpp comms/comms.cpp random/random.cpp utils/logger.cpp utils/memAlloc.cpp utils/misc.cpp utils/profiler.cpp)
+endif()
+
+include_directories(.)
+if(USE_GPU)
+	cuda_add_library(Su2Theta STATIC ${OBJS})
+else()
+	add_library(Su2Theta STATIC ${OBJS})
+endif()
