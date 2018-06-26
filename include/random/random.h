@@ -4,6 +4,15 @@
 	#include <random>
 	#include <memory>
 
+	#include "enumFields.h"
+	#include "random/random.h"
+	#include "comms/comms.h"
+	#include "utils/logger.h"
+
+	#include <omp.h>
+
+	using namespace	Su2Enum;
+
 	namespace	Su2Rand {
 
 		void	initRandom ();
@@ -18,14 +27,53 @@
 
 			public:
 
-				RandomGen();
-				RandomGen(int  seed);
+				RandomGen() {
 
-			Float	rand();
+				decltype(uni.param()) newRange (0.0, 1.0);
+
+				sd.resize  (Su2Comms::nThreads);
+				mt64.resize(Su2Comms::nThreads);
+				uni.param  (newRange);
+
+				std::random_device seed;			// Totally random seed coming from memory garbage
+
+				for (int i=0; i<Su2Comms::nThreads; i++)
+					sd[i] = seed()*(1 + Su2Comms::rank);
+
+				#pragma omp parallel default(shared)
+				{
+					int nThread = omp_get_thread_num();
+					mt64[nThread].seed(sd[nThread]);	// Mersenne-Twister 64 bits, independent per thread
+				}
+			}
+
+				RandomGen(int seed) {
+
+				decltype(uni.param()) newRange (0.0, 1.0);
+
+				sd.resize  (Su2Comms::nThreads);
+				mt64.resize(Su2Comms::nThreads);
+				uni.param  (newRange);
+
+				for (int i=0; i<Su2Comms::nThreads; i++)
+					sd[i] = seed*(1 + Su2Comms::rank);
+
+				#pragma omp parallel default(shared)
+				{
+					int nThread = omp_get_thread_num();
+					mt64[nThread].seed(sd[nThread]);	// Mersenne-Twister 64 bits, independent per thread
+				}
+			}
+
+
+			Float	operator()() {
+				int nThread = omp_get_thread_num();
+				return	uni(mt64[nThread]);
+			}
 		};
 
-		extern std::shared_ptr<RandomGen<double>> myRNG;
-
-		inline auto	genRand () { return (*myRNG).rand(); }
+		double	genRand ();
 	}
+
+
 #endif

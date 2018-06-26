@@ -11,6 +11,8 @@
 
 		public:
 
+		typedef Float data;
+
 		Su2	() 					 { a = { 1., 0., 0., 0. }; }
 		Su2	(Float a0, Float a1, Float a2, Float a3) { a[0] = a0;   a[1] = a1;   a[2] = a2;   a[3] = a3;   }
 		Su2	(Float *b)				 { a[0] = b[0]; a[1] = b[1]; a[2] = b[2]; a[3] = b[3]; }
@@ -127,13 +129,29 @@
 			return	(*this);
 		}
 
-		Su2&	Pert(const Float eps) {
+		Su2&	SetRandom(const Float eps = 1.) {
 			#pragma unroll
-			for (int i=1; i<4; i++)
-				a[i] = ((Float) 2.)*Su2Rand::genRand() - ((Float) 1.);
-			a[0] = 1. - sqrt(a[1]*a[1] + a[2]*a[2] + a[3]*a[3]);
+			for (int i=0; i<4; i++) {
+				Float r = Su2Rand::genRand();
+				a[i] = ((Float) 2.*eps)*r - eps;
+			}
+
+			auto mod = sqrt(1./(a[0]*a[0] + a[1]*a[1] + a[2]*a[2] + a[3]*a[3]));
+
+			a[0] *= mod;
+			a[1] *= mod;
+			a[2] *= mod;
+			a[3] *= mod;
 
 			return	(*this);
+		}
+
+		Su2&	Pert	(const Float eps) {
+			Su2<Float> tmp;
+
+			tmp.SetRandom(eps);
+
+			(*this) *= tmp;
 		}
 	};
 #endif

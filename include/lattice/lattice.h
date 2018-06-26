@@ -66,11 +66,22 @@ class	Lattice	{
 //			trackFree(hMoms);
 	}
 
-	void	SetRand	();
+	void	SetRand	() {
+		// GET THE PROFILER
+		#pragma omp parallel for schedule(static)
+		for (int i=0; i<tVol; i++)
+			static_cast<T*>(hData)[i].SetRandom();
+	}
 
-	int	SLength	() { return Ls; }
-	int	TLength	() { return Lt; }
+	int		SLength	() { return Ls; }
+	int		TLength	() { return Lt; }
 
-	int	Volume	() { return tVol; }
-	int	SVol	() { return sVol; }
+	int		Volume	() { return tVol; }
+	int		SVol	() { return sVol; }
+
+	typename T::data*	RawData	() 	 { return static_cast<typename T::data*>      (hData); }
+	const typename T::data*	RawData	() const { return static_cast<const typename T::data*>(hData); }
+
+	T*		Data	() 	 { return static_cast<T*>      (hData); }
+	const T*	Data	() const { return static_cast<const T*>(hData); }
 };

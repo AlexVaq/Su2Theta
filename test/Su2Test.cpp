@@ -9,7 +9,16 @@
 
 int	main (int argc, char *argv[]) {
 	initSu2 (argc, argv);
-	std::unique_ptr<Lattice<Su2<double>>> myLat = std::make_unique<Lattice<Su2<double>>>(8, 8, PrecDouble);
-	myLat.reset();	// For the logger
+	Lattice<Su2<double>> *myLat = new Lattice<Su2<double>>(8, 8, PrecDouble);
+	myLat->SetRand();
+
+	for (int i; i<myLat->Volume(); i+=4) {
+		double *ptr = myLat->RawData();
+		double test = ptr[i]*ptr[i] + ptr[i+1]*ptr[i+1] + ptr[i+2]*ptr[i+2] + ptr[i+3]*ptr[i+3];
+		printf("%05d\t%.3lf\t%.3lf\t%.3lf\t%.3lf\t\t%.3lf\n", i, ptr[i], ptr[i+1], ptr[i+2], ptr[i+3], test);
+	}
+
+	delete myLat;
+
 	endSu2  ();
 }
