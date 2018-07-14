@@ -53,36 +53,80 @@
 			}
 
 			void	save  (float *memAddress) {
-				opCode(store_ps, memAddress);
+				opCode(store_ps, static_cast<void*>(memAddress));
 			}
 
 			void	stream (float *memAddress) {
-				data = opCode(load_ps, memAddress);
+				opCode(stream_ps, static_cast<void*>(memAddress), this->data);
 			}
 
-			inline	Simd_f	operator+(Simd_f &x) {
+			inline	Simd_f&	operator+(Simd_f &x) {
 				return	opCode(add_ps, this->data, x->data);
 			}
 
-			inline	Simd_f	operator-(Simd_f &x) {
+			inline	Simd_f&	operator-(Simd_f &x) {
 				return	opCode(sub_ps, this->data, x->data);
 			}
 
-			inline	Simd_f	operator*(Simd_f &x) {
+			inline	Simd_f&	operator*(Simd_f &x) {
 				return	opCode(mul_ps, this->data, x->data);
 			}
 
-			inline	Simd_f	operator/(Simd_f &x) {
+			inline	Simd_f&	operator/(Simd_f &x) {
 				return	opCode(div_ps, this->data, x->data);
 			}
 
-			inline	Simd_f	operator!() {
+			inline	Simd_f&	operator+=(Simd_f &x) {
+				return	(*this)+x;
+			}
+
+			inline	Simd_f&	operator-(Simd_f &x) {
+				return	(*this)-x;
+			}
+
+			inline	Simd_f&	operator*(Simd_f &x) {
+				return	(*this)*x;
+			}
+
+			inline	Simd_f&	operator/(Simd_f &x) {
+				return	(*this)/x;
+			}
+
+			inline	Simd_f&	operator!() {
 			        return  opCode(add_ps, opCode(permute_ps, this->data, 0b10110001), this->data);
 			}
 
-			inline	Simd_f	operator~() {
+			inline	Simd_f&	operator~() {
 				return	opCode(mul_ps, this->data, opCode(set_ps, -1., 0., -1., 0., -1., 0., -1., 0., -1., 0., -1., 0., -1., 0., -1., 0.));
 			}
-		
 
+			inline	Simd_f&	fma(Simd_f &a, Simd_f &b) {
+				return	opCode(fmadd_ps, this->data, a, b);
+			}
 
+			inline	Simd_f&	fms(Simd_f &a, Simd_f &b) {
+				return	opCode(fmsub_ps, this->data, a, b);
+			}
+
+			inline	Simd_f&	xPermute () {
+				return	opCode(shuffle_f32x4, this->data, this->data, 0b01001110);
+			}
+
+			inline	Simd_f&	yPermute () {
+				return	opCode(shuffle_f32x4, this->data, this->data, 0b10110001);
+			}
+
+			inline	Simd_f&	zPermute () {
+				return	opCode(permute_ps, this->data, 0b01001110);
+			}
+
+			inline	Simd_f&	tPermute () {
+				return	opCode(permute_ps, this->data, 0b10110001);
+			}
+
+			inline	float	operator[](int lane) {
+				return	data[lane];
+			}
+		}
+	}
+#endif
