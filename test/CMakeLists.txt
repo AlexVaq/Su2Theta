@@ -7,6 +7,8 @@ if(USE_GPU)
   LIST(APPEND LIBS ${CUDA_cufft_LIBRARY} ${CUDA_cudart_LIBRARY})
 endif()
 
-add_executable(Su2Test Su2Test.cpp)
+add_executable(Su2Test  Su2Test.cpp)
+add_executable(SimdTest SimdTest.cpp)
 
-target_link_libraries(Su2Test ${LIBS} )
+target_link_libraries(Su2Test  ${LIBS} )
+target_link_libraries(SimdTest ${LIBS} )

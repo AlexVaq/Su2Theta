@@ -123,6 +123,22 @@
 			inline	float	operator[](int lane) {
 				return	data[lane];
 			}
+
+			friend	Simd_f	sqrt	(Simd_f&);
+			friend	Simd_f	cos	(Simd_f&);
+			friend	Simd_f	sin	(Simd_f&);
+		}
+
+		Simd_f	sqrt	(Simd_f &x) {
+			return	opCode(sqrt_ps, x.data);
+		}
+
+		Simd_f	cos	(Simd_f &x) {
+			return	opCode(cos_ps, x.data);
+		}
+
+		Simd_f	sin	(Simd_f &x) {
+			return	opCode(sin_ps, x.data);
 		}
 	}
 #endif

@@ -4,8 +4,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_INCLUDE_DIRECTORIES_PROJECT_BEFORE ON)
 set(CMAKE_COLOR_MAKEFILE ON)
 set(CMAKE_COLOR_MAKEFILE ON)
-set(CMAKE_CXX_STANDARD_REQUIRED 14)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED 17)
+set(CMAKE_CXX_STANDARD 17)
 
 set(DEFAULT_BUILD "RELEASE")
 set(VALID_BUILDS DEVEL RELEASE DEBUG)
@@ -56,7 +56,7 @@ if(${USE_GPU})
   find_package(CUDA REQUIRED)
   #set(CUDA_HOST_COMPILER gcc)
   set(CUDA_PROPAGATE_HOST_FLAGS ON)
-  set(CUDA_NVCC_FLAGS "-arch=${GPU_COMP} -code=${GPU_ARCH} -ftz=true -prec-div=false -prec-sqrt=false -std=c++14")
+  set(CUDA_NVCC_FLAGS "-arch=${GPU_COMP} -code=${GPU_ARCH} -ftz=true -prec-div=false -prec-sqrt=false -std=c++17")
 
   set(CUDA_NVCC_FLAGS_DEVEL "-O3 -lineinfo" CACHE STRING
       "Flags used by the CUDA compiler during regular development builds." FORCE )
@@ -98,8 +98,8 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" 
     set(SSE_FLAGS "-msse4.1")
 endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} ${AVX_FLAGS} ${SSE_FLAGS} ${FMA_FLAGS} -mcmodel=medium -std=c++14")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} ${AVX_FLAGS} ${SSE_FLAGS} ${FMA_FLAGS} -mcmodel=medium -std=c++14")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} ${AVX_FLAGS} ${SSE_FLAGS} ${FMA_FLAGS} -mcmodel=medium -std=c++17")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} ${AVX_FLAGS} ${SSE_FLAGS} ${FMA_FLAGS} -mcmodel=medium -std=c++17")
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wa,-q -lc++")

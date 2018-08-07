@@ -1,3 +1,6 @@
+#include <simd/simd-tri.h>
+#include <simd/simd-math.h>
+
 #ifdef  __AVX512F__
 	#include <simd/simd-Avx512.h>
 #elif   defined(__AVX2__)
@@ -7,3 +10,4 @@
 #else
 	#include <simd/simd-Sse4.h>
 #endif
+

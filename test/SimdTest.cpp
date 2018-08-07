@@ -13,6 +13,43 @@
 using namespace Su2Rand;
 using namespace Simd;
 
+typedef union ieee754_f {
+	float f;
+	int   u;
+}	ieee754_f;
+
+constexpr int Sll[31] = { 0x35531585,
+ 0x34D9F312,
+ 0x35E8092E,
+ 0x3471F546,
+ 0x36E62D17,
+ 0x361B9D59,
+ 0x36BEA3FC,
+ 0x36C14637,
+ 0x36E6E755,
+ 0x36C98247,
+ 0x34C0C312,
+ 0x36354D8B,
+ 0x3655A754,
+ 0x36FBA90B,
+ 0x36D6074B,
+ 0x36CCCFE7,
+ 0x36BD1D8C,
+ 0x368E7D60,
+ 0x35CCA667,
+ 0x36A84554,
+ 0x36F619B9,
+ 0x35C151F8,
+ 0x366C8F89,
+ 0x36F32B5A,
+ 0x36DE5F6C,
+ 0x36776155,
+ 0x355CEF90,
+ 0x355CFBA5,
+ 0x36E66F73,
+ 0x36F45492,
+ 0x36CB6DC9 };
+
 int	main (int argc, char *argv[]) {
 
 	constexpr size_t nIters = 4294967296/128;
@@ -127,4 +164,53 @@ int	main (int argc, char *argv[]) {
 	printf ("Result: %f\n", x5);
 	printf ("Speedup\t\tx%.2lf\n", ((double) stdElapsed.count())/((double) avxElapsed.count()));
 	printf ("Class vs intrinsics\tx%.2lf\n", ((double) othElapsed.count())/((double) avxElapsed.count()));
+
+	printf("Exponential test\n");
+
+	std::vector<_MData_> base(nIters);
+	std::vector<_MData_> news(nIters);
+	std::vector<_MData_> outs(nIters);
+
+	start = std::chrono::high_resolution_clock::now();
+
+	for (size_t i=0; i<nIters; i++) {
+		_MData_ tVar = opCode(set_ps, (float) i*5e-7f, (float) i*0.75e-8f, (float) i*0.25e-8f, (float) i*0.14e-8f, (float) i*0.1e-8f, (float) i *0.49e-8f, (float) i*0.34e-8f, (float) i*0.98e-9f);
+		base[i] = opCode(exp_ps, tVar);
+	}
+
+	stop  = std::chrono::high_resolution_clock::now();
+	stdElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+	printf ("Std took %lu nanoseconds\n", stdElapsed); fflush(stdout);
+
+	start = std::chrono::high_resolution_clock::now();
+
+	for (size_t i=0; i<nIters; i++) {
+		_MData_ tVar = opCode(set_ps, (float) i*5e-7f, (float) i*0.75e-8f, (float) i*0.25e-8f, (float) i*0.14e-8f, (float) i*0.1e-8f, (float) i *0.49e-8f, (float) i*0.34e-8f, (float) i*0.98e-9f);
+		news[i] = opCode(exp2_ps, tVar);
+	}
+
+	stop  = std::chrono::high_resolution_clock::now();
+	avxElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+
+	printf ("Speedup\t\tx%.2lf\n", ((double) stdElapsed.count())/((double) avxElapsed.count()));
+	printf ("Avx took %lu nanoseconds\n", avxElapsed); fflush(stdout);
+	float	fMax = 0.f;
+	int	iMax = 0;
+	int	kMax = 0;
+	for (size_t i=33273478; i<33273500; i++) {//nIters; i++) {
+		if ((i%1) == 0) {
+			printsVar(base[i], "base");
+			printsVar(news[i], "news");
+			printf("Test %f\n", std::exp(i*5e-7f));
+		}
+		outs[i] = opCode(sub_ps, base[i], news[i]);
+		for (int k=0; k<8; k++)
+			if (outs[i][k] > fMax) {
+				fMax = outs[i][k];
+				iMax = i;
+				kMax = k;
+			}
+	}
+	printf ("Max error %d %f (M %e S %e)\n", iMax, fMax, news[iMax][kMax], base[iMax][kMax]); fflush(stdout);
+
 }

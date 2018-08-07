@@ -2,6 +2,7 @@
 	#define	__SU2_CLASS
 
 	#include "random/random.h"
+	#include <algorithm>
 
 	template<typename Float>
 	class	Su2	{
@@ -11,16 +12,17 @@
 
 		public:
 
-		typedef Float data;
+		typedef	Float data;
 
-		Su2	() 					 { a = { 1., 0., 0., 0. }; }
+		Su2	() 					 { a[0] = 1.; a[1] = a[2] = a[3] = 0.; }
 		Su2	(Float a0, Float a1, Float a2, Float a3) { a[0] = a0;   a[1] = a1;   a[2] = a2;   a[3] = a3;   }
-		Su2	(Float *b)				 { a[0] = b[0]; a[1] = b[1]; a[2] = b[2]; a[3] = b[3]; }
+		Su2	(Float *b)				 { std::copy(b, b+4, a); }
+		//Su2	(Float *b)				 { a[0] = b[0]; a[1] = b[1]; a[2] = b[2]; a[3] = b[3]; }
 
 
 		/*	No Vectorization (GPU)	*/
 
-		Su2	operator* (Su2 &b) {
+		Su2	operator* (const Su2 &b) {
 			Su2	tmp;
 
 			tmp.a[0] = a[0]*b.a[0] - a[1]*b.a[1] - a[2]*b.a[2] - a[3]*b.a[3];
@@ -31,11 +33,11 @@
 			return	tmp;
 		}
 
-		Su2&	operator*=(Su2 &b) {
+		Su2	operator*=(const Su2 &b) {
 			return	(*this * b);
 		}
 
-		Su2	operator+ (Su2 &b) {
+		Su2	operator+ (const Su2 &b) {
 			Su2	tmp;
 
 			tmp.a[0] = a[0] + b.a[0];
@@ -46,11 +48,11 @@
 			return	tmp;
 		}
 
-		Su2&	operator+=(Su2 &b) {
+		Su2	operator+=(const Su2 &b) {
 			return	(*this + b);
 		}
 
-		Su2	operator- (Su2 &b) {
+		Su2	operator- (const Su2 &b) {
 			Su2	tmp;
 
 			tmp.a[0] = a[0] - b.a[0];
@@ -61,11 +63,21 @@
 			return	tmp;
 		}
 
-		Su2&	operator-=(Su2 &b) {
+		Su2	operator! () {
+			Su2	tmp;
+
+			tmp.a[1] = -a[1];
+			tmp.a[2] = -a[2];
+			tmp.a[3] = -a[3];
+
+			return	tmp;
+		}
+
+		Su2	operator-=(const Su2 &b) {
 			return	(*this - b);
 		}
 
-		Su2	operator* (Float &b) {
+		Su2	operator* (const Float &b) {
 			Su2	tmp;
 
 			tmp.a[0] = a[0]*b;
@@ -76,7 +88,7 @@
 			return	tmp;
 		}
 
-		Su2&	operator*=(Float &b) {
+		Su2	operator*=(const Float &b) {
 			return	(*this * b);
 		}
 
@@ -88,7 +100,11 @@
 			return	((Float) 2.)*a[0];
 		}
 
-		Su2&	Project() {
+		Float	SuperTrace() {	// Only different for vectorized datatypes
+			return	((Float) 2.)*a[0];
+		}
+
+		Su2	Project() {
 			return	(*this)/sqrt(Norm());
 		}
 
@@ -152,6 +168,22 @@
 			tmp.SetRandom(eps);
 
 			(*this) *= tmp;
+		}
+
+		Su2	xPermute() {
+			return	(*this);
+		}
+
+		Su2	yPermute() {
+			return	(*this);
+		}
+
+		Su2	zPermute() {
+			return	(*this);
+		}
+
+		Su2	tPermute() {
+			return	(*this);
 		}
 	};
 #endif
