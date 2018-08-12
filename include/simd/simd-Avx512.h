@@ -33,7 +33,7 @@
 				data = opCode(set_ps, x15, x14, x13, x12, x11, x10, x9, x8, x7, x6, x5, x4, x3, x2, x1, x0);
 			}
 
-				Simd_f(float x) {
+				Simd_f(float x0) {
 				data = opCode(set1_ps, x0);
 			}
 
@@ -53,80 +53,100 @@
 			}
 
 			void	save  (float *memAddress) {
-				opCode(store_ps, static_cast<void*>(memAddress));
+				opCode(store_ps,  memAddress, this->data);
 			}
 
 			void	stream (float *memAddress) {
-				opCode(stream_ps, static_cast<void*>(memAddress), this->data);
+				opCode(stream_ps, memAddress, this->data);
 			}
 
-			inline	Simd_f&	operator+(Simd_f &x) {
-				return	opCode(add_ps, this->data, x->data);
+			inline	Simd_f	operator+(const Simd_f &x) {
+				return	opCode(add_ps, this->data, x.data);
 			}
 
-			inline	Simd_f&	operator-(Simd_f &x) {
-				return	opCode(sub_ps, this->data, x->data);
+			inline	Simd_f	operator-(const Simd_f &x) {
+				return	opCode(sub_ps, this->data, x.data);
 			}
 
-			inline	Simd_f&	operator*(Simd_f &x) {
-				return	opCode(mul_ps, this->data, x->data);
+			inline	Simd_f	operator*(const Simd_f &x) {
+				return	opCode(mul_ps, this->data, x.data);
 			}
 
-			inline	Simd_f&	operator/(Simd_f &x) {
-				return	opCode(div_ps, this->data, x->data);
+			inline	Simd_f	operator/(const Simd_f &x) {
+				return	opCode(div_ps, this->data, x.data);
 			}
 
-			inline	Simd_f&	operator+=(Simd_f &x) {
-				return	(*this)+x;
+			inline	Simd_f &operator+=(const Simd_f &x) {
+				(*this) = (*this)+x;
+				return	(*this);
 			}
 
-			inline	Simd_f&	operator-(Simd_f &x) {
-				return	(*this)-x;
+			inline	Simd_f &operator-=(const Simd_f &x) {
+				(*this) = (*this)-x;
+				return	(*this);
 			}
 
-			inline	Simd_f&	operator*(Simd_f &x) {
-				return	(*this)*x;
+			inline	Simd_f &operator*=(const Simd_f &x) {
+				(*this) = (*this)*x;
+				return	(*this);
 			}
 
-			inline	Simd_f&	operator/(Simd_f &x) {
-				return	(*this)/x;
+			inline	Simd_f &operator/=(const Simd_f &x) {
+				(*this) = (*this)/x;
+				return	(*this);
 			}
 
-			inline	Simd_f&	operator!() {
+			inline	Simd_f	operator!() {
 			        return  opCode(add_ps, opCode(permute_ps, this->data, 0b10110001), this->data);
 			}
 
-			inline	Simd_f&	operator~() {
+			inline	Simd_f	operator~() {
 				return	opCode(mul_ps, this->data, opCode(set_ps, -1., 0., -1., 0., -1., 0., -1., 0., -1., 0., -1., 0., -1., 0., -1., 0.));
 			}
 
-			inline	Simd_f&	fma(Simd_f &a, Simd_f &b) {
-				return	opCode(fmadd_ps, this->data, a, b);
+			inline	Simd_f	fma(const Simd_f &a, const Simd_f &b) {
+				return	opCode(fmadd_ps, this->data, a.data, b.data);
 			}
 
-			inline	Simd_f&	fms(Simd_f &a, Simd_f &b) {
-				return	opCode(fmsub_ps, this->data, a, b);
+			inline	Simd_f	fms(const Simd_f &a, const Simd_f &b) {
+				return	opCode(fmsub_ps, this->data, a.data, b.data);
 			}
 
-			inline	Simd_f&	xPermute () {
+			inline	Simd_f	xPermute () {
 				return	opCode(shuffle_f32x4, this->data, this->data, 0b01001110);
 			}
 
-			inline	Simd_f&	yPermute () {
+			inline	Simd_f	yPermute () {
 				return	opCode(shuffle_f32x4, this->data, this->data, 0b10110001);
 			}
 
-			inline	Simd_f&	zPermute () {
+			inline	Simd_f	zPermute () {
 				return	opCode(permute_ps, this->data, 0b01001110);
 			}
 
-			inline	Simd_f&	tPermute () {
+			inline	Simd_f	tPermute () {
 				return	opCode(permute_ps, this->data, 0b10110001);
 			}
 
-			inline	float	operator[](int lane) {
+			inline	float&	operator[](int lane) {
 				return	data[lane];
 			}
-		}
+
+			friend  Simd_f  sqrt    (const Simd_f&);
+			friend  Simd_f  cos     (const Simd_f&);
+			friend  Simd_f  sin     (const Simd_f&);
+		};
+
+		Simd_f  sqrt    (const Simd_f &x) {
+                        return  opCode(sqrt_ps, x.data);
+                }
+
+                Simd_f  cos     (const Simd_f &x) {
+                        return  opCode(cos_ps, x.data);
+                }
+
+                Simd_f  sin     (const Simd_f &x) {
+                        return  opCode(sin_ps, x.data);
+                }
 	}
 #endif
