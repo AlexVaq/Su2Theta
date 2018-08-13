@@ -12,7 +12,10 @@
 
 		public:
 
-		typedef	Float data;
+		typedef	Float  data;
+		typedef	Float sData;
+
+		static constexpr size_t sWide = 1;
 
 		Su2	() 					 { a[0] = 1.; a[1] = a[2] = a[3] = 0.; }
 		Su2	(Float a0, Float a1, Float a2, Float a3) { a[0] = a0;   a[1] = a1;   a[2] = a2;   a[3] = a3;   }

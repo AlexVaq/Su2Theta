@@ -1,3 +1,6 @@
+#ifndef	__SIMD_GLOBAL
+#define	__SIMD_GLOBAL
+
 #include <simd/simd-tri.h>
 #include <simd/simd-math.h>
 
@@ -9,3 +12,4 @@
 	#include <simd/simd-Sse4.h>
 #endif
 
+#endif

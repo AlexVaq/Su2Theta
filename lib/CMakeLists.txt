@@ -1,7 +1,7 @@
 if(HDF5_PARALLEL_COMPRESSION)
-	set(OBJS comms/commVars.cpp comms/comms.cpp random/random.cpp utils/logger.cpp utils/memAlloc.cpp utils/misc.cpp utils/profiler.cpp)
+	set(OBJS comms/commVars.cpp comms/comms.cpp random/random.cpp simd/simd.cpp utils/logger.cpp utils/memAlloc.cpp utils/misc.cpp utils/profiler.cpp)
 else()
-	set(OBJS comms/commVars.cpp comms/comms.cpp random/random.cpp utils/logger.cpp utils/memAlloc.cpp utils/misc.cpp utils/profiler.cpp)
+	set(OBJS comms/commVars.cpp comms/comms.cpp random/random.cpp simd/simd.cpp utils/logger.cpp utils/memAlloc.cpp utils/misc.cpp utils/profiler.cpp)
 endif()
 
 include_directories(.)

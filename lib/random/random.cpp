@@ -4,6 +4,7 @@
 
 #include "enumFields.h"
 #include "random/random.h"
+#include "simd/simd.h"
 #include "utils/logger.h"
 
 #include <omp.h>
@@ -25,4 +26,20 @@ namespace	Su2Rand {
 	}
 
 	double	genRand () { return (*myRNG)(); }
+
+//	template<class T>
+//	T	genVRand() {
+//		return	T(0.);
+//	}
+
+	template<>
+	Simd::Simd_f	genVRand<Simd::Simd_f>() {
+		float in[Simd::Simd_f::nData];
+
+		#pragma unroll
+		for (int i=0; i<Simd::Simd_f::nData; i++)
+			in[i] = genRand();
+
+		return	Simd::Simd_f(in);
+	}
 }

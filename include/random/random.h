@@ -5,7 +5,6 @@
 	#include <memory>
 
 	#include "enumFields.h"
-	#include "random/random.h"
 	#include "comms/comms.h"
 	#include "utils/logger.h"
 
@@ -72,7 +71,10 @@
 			}
 		};
 
-		double	genRand ();
+		double	genRand	();
+
+		template<class T>
+		T	genVRand();
 	}
 
 

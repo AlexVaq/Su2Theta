@@ -10,6 +10,7 @@
 	#define opCode(x,...) opCode_N(_PREFIX_, x, __VA_ARGS__)
 
 	#include <immintrin.h>
+	#include "random/random.h"
 
 	#define _MData_ __m256
 	#define _MInt_  __m256i
@@ -28,6 +29,13 @@
 			_MData_	data;
 
 			public:
+
+                	static constexpr size_t nData = sAlign/sizeof(float);
+			typedef float sData;
+
+				Simd_f() {
+				data = opCode(setzero_ps);
+			}
 
 				Simd_f(float x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7) {
 				data = opCode(set_ps, x7, x6, x5, x4, x3, x2, x1, x0);
@@ -96,6 +104,10 @@
 				return	(*this);
 			}
 
+			inline	Simd_f	operator-() {
+				return	opCode(sub_ps, opCode(setzero_ps), this->data);
+			}
+
 			inline	Simd_f	operator!() {
 				return	opCode(add_ps, opCode(permute_ps, this->data, 0b10110001), this->data);
 			}
@@ -112,6 +124,10 @@
 				return	opCode(fmsub_ps, this->data, a.data, b.data);
 			}
 
+			inline	Simd_f	xPermute () {
+				return	(*this);
+			}
+
 			inline	Simd_f	yPermute () {
 				return	opCode(permute2f128_ps, this->data, this->data, 0b00000001);
 			}
@@ -124,25 +140,27 @@
 				return	opCode(permute_ps, this->data, 0b10110001);
 			}
 
+			inline	void	SetRandom () {
+				(*this) = Simd_f(Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(),
+						 Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand());
+			}
+
+			inline	float	Sum () {
+				return	opCode(hadd_ps, opCode(hadd_ps,
+						opCode(hadd_ps, (*this).data, opCode(permute2f128_ps, (*this).data, (*this).data, 0b00000001)), (*this).data), (*this).data)[0];
+			}
+
 			inline	float&	operator[](int lane) {
 				return	data[lane];
+			}
+
+			inline	_MData_&	raw() {
+				return	data;
 			}
 
 			friend  Simd_f  sqrt    (const Simd_f&);
 			friend  Simd_f  cos     (const Simd_f&);
 			friend  Simd_f  sin     (const Simd_f&);
 		};
-
-		Simd_f  sqrt    (const Simd_f &x) {
-                        return  opCode(sqrt_ps, x.data);
-                }
-
-                Simd_f  cos     (const Simd_f &x) {
-                        return  opCode(cos_ps, x.data);
-                }
-
-                Simd_f  sin     (const Simd_f &x) {
-                        return  opCode(sin_ps, x.data);
-                }
 	}
 #endif

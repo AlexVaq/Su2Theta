@@ -85,17 +85,20 @@ inline _MData_	opCode(exp_pd, _MData_ &x) {
 				opCode(add_pd, vA3d, opCode(mul_pd, R,
 					opCode(add_pd, vA4d, opCode(mul_pd, R, vA5d)))))))));
 	Q   = opCode(add_pd, R1, opCode(add_pd, R2, Q));
-#if	defined(__AVX512F__)
-	int vals[8];
-	opCodl(store_si256, static_cast<__m256i*>(static_cast<void*>(vals)), n2);
-	Sl  = opCode(set_pd, sLead_d[vals[7]], sLead_d[vals[6]], sLead_d[vals[5]], sLead_d[vals[4]], sLead_d[vals[3]], sLead_d[vals[2]], sLead_d[vals[1]], sLead_d[vals[0]]);
-	St  = opCode(set_pd, sTrail_d[vals[7]], sTrail_d[vals[6]], sTrail_d[vals[5]], sTrail_d[vals[4]], sTrail_d[vals[3]], sTrail_d[vals[2]], sTrail_d[vals[1]], sTrail_d[vals[0]]);
-#else
-	int vals[4];
-	opCodl(store_si128, static_cast<__m128i*>(static_cast<void*>(vals)), n2);
-	Sl  = opCode(set_pd, sLead_d[vals[3]], sLead_d[vals[2]], sLead_d[vals[1]], sLead_d[vals[0]]);
-	St  = opCode(set_pd, sTrail_d[vals[3]], sTrail_d[vals[2]], sTrail_d[vals[1]], sTrail_d[vals[0]]);
-#endif
+//#if	defined(__AVX512F__)
+//	int vals[8];
+//	opCodl(store_si256, static_cast<__m256i*>(static_cast<void*>(vals)), n2);
+//	Sl  = opCode(set_pd, sLead_d[vals[7]], sLead_d[vals[6]], sLead_d[vals[5]], sLead_d[vals[4]], sLead_d[vals[3]], sLead_d[vals[2]], sLead_d[vals[1]], sLead_d[vals[0]]);
+//	St  = opCode(set_pd, sTrail_d[vals[7]], sTrail_d[vals[6]], sTrail_d[vals[5]], sTrail_d[vals[4]], sTrail_d[vals[3]], sTrail_d[vals[2]], sTrail_d[vals[1]], sTrail_d[vals[0]]);
+//#else
+//	int vals[4];
+//	opCodl(store_si128, static_cast<__m128i*>(static_cast<void*>(vals)), n2);
+//	Sl  = opCode(set_pd, sLead_d[vals[3]], sLead_d[vals[2]], sLead_d[vals[1]], sLead_d[vals[0]]);
+//	St  = opCode(set_pd, sTrail_d[vals[3]], sTrail_d[vals[2]], sTrail_d[vals[1]], sTrail_d[vals[0]]);
+//#endif
+	Sl  = opCode(i32gather_pd, sLead_d.data(),  n2, 8);
+	St  = opCode(i32gather_pd, sTrail_d.data(), n2, 8);
+
 	S   = opCode(add_pd, Sl, St);
 
 #if	defined(__AVX512F__)
@@ -158,17 +161,20 @@ inline _MData_	opCode(log_pd, _MData_ &x) {
 	F  = opCode(mul_pd, vi2t7d, i2);
 	f  = opCode(sub_pd, Y, F);
 
-#if	defined(__AVX512F__)
-	int vals[8];
-	opCodl(store_si256, static_cast<__m256i*>(static_cast<void*>(vals)), j);
-	fc  = opCode(set_pd, cLead_d[vals[7]],  cLead_d[vals[6]],  cLead_d[vals[5]],  cLead_d[vals[4]],  cLead_d[vals[3]],  cLead_d[vals[2]],  cLead_d[vals[1]],  cLead_d[vals[0]]);
-	i2  = opCode(set_pd, cTrail_d[vals[7]], cTrail_d[vals[6]], cTrail_d[vals[5]], cTrail_d[vals[4]], cTrail_d[vals[3]], cTrail_d[vals[2]], cTrail_d[vals[1]], cTrail_d[vals[0]]);
-#else
-	int vals[4];
-	opCodl(store_si128, static_cast<__m128i*>(static_cast<void*>(vals)), j);
-	fc  = opCode(set_pd, cLead_d[vals[3]],  cLead_d[vals[2]],  cLead_d[vals[1]],  cLead_d[vals[0]]);
-	i2  = opCode(set_pd, cTrail_d[vals[3]], cTrail_d[vals[2]], cTrail_d[vals[1]], cTrail_d[vals[0]]);
-#endif
+//#if	defined(__AVX512F__)
+//	int vals[8];
+//	opCodl(store_si256, static_cast<__m256i*>(static_cast<void*>(vals)), j);
+//	fc  = opCode(set_pd, cLead_d[vals[7]],  cLead_d[vals[6]],  cLead_d[vals[5]],  cLead_d[vals[4]],  cLead_d[vals[3]],  cLead_d[vals[2]],  cLead_d[vals[1]],  cLead_d[vals[0]]);
+//	i2  = opCode(set_pd, cTrail_d[vals[7]], cTrail_d[vals[6]], cTrail_d[vals[5]], cTrail_d[vals[4]], cTrail_d[vals[3]], cTrail_d[vals[2]], cTrail_d[vals[1]], cTrail_d[vals[0]]);
+//#else
+//	int vals[4];
+//	opCodl(store_si128, static_cast<__m128i*>(static_cast<void*>(vals)), j);
+//	fc  = opCode(set_pd, cLead_d[vals[3]],  cLead_d[vals[2]],  cLead_d[vals[1]],  cLead_d[vals[0]]);
+//	i2  = opCode(set_pd, cTrail_d[vals[3]], cTrail_d[vals[2]], cTrail_d[vals[1]], cTrail_d[vals[0]]);
+//#endif
+	fc  = opCode(i32gather_pd, cLead_d.data(),  j, 8);
+	i2  = opCode(i32gather_pd, cTrail_d.data(), j, 8);
+
 
 	Cl  = opCode(add_pd, opCode(mul_pd, m, vLg2ld), fc);
 	Ct  = opCode(add_pd, opCode(mul_pd, m, vLg2td), i2);
@@ -269,19 +275,22 @@ inline _MData_	opCode(exp_ps, _MData_ &x) {
 		opCode(mul_ps, R, R),
 		opCode(add_ps, vA1f, opCode(mul_ps, R, vA2f)));
 	Q   = opCode(add_ps, R1, opCode(add_ps, R2, Q));
-#if	defined(__AVX512F__)
-	int vals[16];
-	opCode(store_si512, static_cast<__m512i*>(static_cast<void*>(vals)), n2);
-	Sl  = opCode(set_ps, sLead_f[vals[15]], sLead_f[vals[14]], sLead_f[vals[13]], sLead_f[vals[12]], sLead_f[vals[11]], sLead_f[vals[10]], sLead_f[vals[ 9]], sLead_f[vals[8]],
-			     sLead_f[vals[ 7]], sLead_f[vals[ 6]], sLead_f[vals[ 5]], sLead_f[vals[ 4]], sLead_f[vals[ 3]], sLead_f[vals[ 2]], sLead_f[vals[ 1]], sLead_f[vals[0]]);
-	St  = opCode(set_ps, sTrail_f[vals[15]], sTrail_f[vals[14]], sTrail_f[vals[13]], sTrail_f[vals[12]], sTrail_f[vals[11]], sTrail_f[vals[10]], sTrail_f[vals[ 9]], sTrail_f[vals[ 8]],
-			     sTrail_f[vals[ 7]], sTrail_f[vals[ 6]], sTrail_f[vals[ 5]], sTrail_f[vals[ 4]], sTrail_f[vals[ 3]], sTrail_f[vals[ 2]], sTrail_f[vals[ 1]], sTrail_f[vals[ 0]]);
-#else
-	int vals[8];
-	opCode(store_si256, static_cast<__m256i*>(static_cast<void*>(vals)), n2);
-	Sl  = opCode(set_ps, sLead_f[vals[7]], sLead_f[vals[6]], sLead_f[vals[5]], sLead_f[vals[4]], sLead_f[vals[3]], sLead_f[vals[2]], sLead_f[vals[1]], sLead_f[vals[0]]);
-	St  = opCode(set_ps, sTrail_f[vals[7]], sTrail_f[vals[6]], sTrail_f[vals[5]], sTrail_f[vals[4]], sTrail_f[vals[3]], sTrail_f[vals[2]], sTrail_f[vals[1]], sTrail_f[vals[0]]);
-#endif
+//#if	defined(__AVX512F__)
+//	int vals[16];
+//	opCode(store_si512, static_cast<__m512i*>(static_cast<void*>(vals)), n2);
+//	Sl  = opCode(set_ps, sLead_f[vals[15]], sLead_f[vals[14]], sLead_f[vals[13]], sLead_f[vals[12]], sLead_f[vals[11]], sLead_f[vals[10]], sLead_f[vals[ 9]], sLead_f[vals[8]],
+//			     sLead_f[vals[ 7]], sLead_f[vals[ 6]], sLead_f[vals[ 5]], sLead_f[vals[ 4]], sLead_f[vals[ 3]], sLead_f[vals[ 2]], sLead_f[vals[ 1]], sLead_f[vals[0]]);
+//	St  = opCode(set_ps, sTrail_f[vals[15]], sTrail_f[vals[14]], sTrail_f[vals[13]], sTrail_f[vals[12]], sTrail_f[vals[11]], sTrail_f[vals[10]], sTrail_f[vals[ 9]], sTrail_f[vals[ 8]],
+//			     sTrail_f[vals[ 7]], sTrail_f[vals[ 6]], sTrail_f[vals[ 5]], sTrail_f[vals[ 4]], sTrail_f[vals[ 3]], sTrail_f[vals[ 2]], sTrail_f[vals[ 1]], sTrail_f[vals[ 0]]);
+//#else
+//	int vals[8];
+//	opCode(store_si256, static_cast<__m256i*>(static_cast<void*>(vals)), n2);
+//	Sl  = opCode(set_ps, sLead_f[vals[7]], sLead_f[vals[6]], sLead_f[vals[5]], sLead_f[vals[4]], sLead_f[vals[3]], sLead_f[vals[2]], sLead_f[vals[1]], sLead_f[vals[0]]);
+//	St  = opCode(set_ps, sTrail_f[vals[7]], sTrail_f[vals[6]], sTrail_f[vals[5]], sTrail_f[vals[4]], sTrail_f[vals[3]], sTrail_f[vals[2]], sTrail_f[vals[1]], sTrail_f[vals[0]]);
+//#endif
+	Sl  = opCode(i32gather_ps, sLead_f.data(),  n2, 4);
+	St  = opCode(i32gather_ps, sTrail_f.data(), n2, 4);
+
 	S   = opCode(add_ps, Sl, St);
 
 #if	defined(__AVX512F__)
@@ -361,19 +370,8 @@ inline _MData_	opCode(log_ps, _MData_ &x) {
 	F  = opCode(mul_ps, vi2t7f, i2);
 	f  = opCode(sub_ps, Y, F);
 
-#if	defined(__AVX512F__)
-	int vals[16];
-	opCode(store_si512, static_cast<__m512i*>(static_cast<void*>(vals)), j);
-	fc  = opCode(set_ps, cLead_f[vals[15]],  cLead_f[vals[14]],  cLead_f[vals[13]],  cLead_f[vals[12]],  cLead_f[vals[11]],  cLead_f[vals[10]],  cLead_f[vals[9]],  cLead_f[vals[8]],
-			     cLead_f[vals[7]],   cLead_f[vals[6]],   cLead_f[vals[5]],   cLead_f[vals[4]],   cLead_f[vals[3]],   cLead_f[vals[2]],   cLead_f[vals[1]],  cLead_f[vals[0]]);
-	i2  = opCode(set_ps, cTrail_f[vals[15]], cTrail_f[vals[14]], cTrail_f[vals[13]], cTrail_f[vals[12]], cTrail_f[vals[11]], cTrail_f[vals[10]], cTrail_f[vals[9]], cTrail_f[vals[8]],
-			     cTrail_f[vals[7]],  cTrail_f[vals[6]],  cTrail_f[vals[5]],  cTrail_f[vals[4]],  cTrail_f[vals[3]],  cTrail_f[vals[2]],  cTrail_f[vals[1]], cTrail_f[vals[0]]);
-#else
-	int vals[8];
-	opCode(store_si256, static_cast<__m256i*>(static_cast<void*>(vals)), j);
-	fc  = opCode(set_ps, cLead_f[vals[7]],  cLead_f[vals[6]],  cLead_f[vals[5]],  cLead_f[vals[4]],  cLead_f[vals[3]],  cLead_f[vals[2]],  cLead_f[vals[1]],  cLead_f[vals[0]]);
-	i2  = opCode(set_ps, cTrail_f[vals[7]], cTrail_f[vals[6]], cTrail_f[vals[5]], cTrail_f[vals[4]], cTrail_f[vals[3]], cTrail_f[vals[2]], cTrail_f[vals[1]], cTrail_f[vals[0]]);
-#endif
+	fc  = opCode(i32gather_ps, cLead_f.data(),  j, 4);
+	i2  = opCode(i32gather_ps, cTrail_f.data(), j, 4);
 
 	Cl  = opCode(add_ps, opCode(mul_ps, m, vLg2lf), fc);
 	Ct  = opCode(add_ps, opCode(mul_ps, m, vLg2tf), i2);

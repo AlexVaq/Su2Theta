@@ -82,6 +82,8 @@
 		size_t		Volume	() { return tVol; }
 		size_t		SVol	() { return sVol; }
 
+		size_t		oVol	() { return tVol/T::sWide; }
+
 		size_t		nextPoint (size_t idx, int mu) {
 			/*	Even-Odd code	*/
 #if 0

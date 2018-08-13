@@ -29,7 +29,15 @@
 
 			public:
 
-				Simd_f(float x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7, float x8, float x9, float x10, float x11, float x12, float x13, float x14, float x15) {
+                	static constexpr size_t nData = sAlign/sizeof(float);
+			typedef float sData;
+
+				Simd_f() {
+				data = opCode(setzero_ps);
+			}
+
+				Simd_f(float x0, float x1, float x2,  float x3,  float x4,  float x5,  float x6,  float x7,
+				       float x8, float x9, float x10, float x11, float x12, float x13, float x14, float x15) {
 				data = opCode(set_ps, x15, x14, x13, x12, x11, x10, x9, x8, x7, x6, x5, x4, x3, x2, x1, x0);
 			}
 
@@ -126,6 +134,10 @@
 
 			inline	Simd_f	tPermute () {
 				return	opCode(permute_ps, this->data, 0b10110001);
+			}
+
+			inline	float	Sum () {
+				return	opCode(setzero_ps);
 			}
 
 			inline	float&	operator[](int lane) {

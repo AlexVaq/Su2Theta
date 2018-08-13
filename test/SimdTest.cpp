@@ -192,8 +192,6 @@ int	main (int argc, char *argv[]) {
 					 std::log(((float) i)*0.1e-8f), std::log(((float) i)*0.49e-18f), std::log(((float) i)*0.34e-28f), std::log(((float) i)*0.98e-39f),
 					 std::log(((float) i)*0.1e-8f), std::log(((float) i)*0.49e-18f), std::log(((float) i)*0.34e-28f), std::log(((float) i)*0.98e-39f));
 #else
-//		base[i] = opCode(set_ps, std::log(((float) i)*7e-4f),   std::log(((float) i)*7e-5f),     std::log(((float) i)*0.25e-5f),  std::log(((float) i)*0.14e-6f),
-//					 std::log(((float) i)*0.1e-8f), std::log(((float) i)*0.49e-18f), std::log(((float) i)*0.34e-28f), std::log(((float) i)*0.98e-39f));
 		base[i] = opCode(set_ps, std::log(((float) i)*7e-4f), std::log(((float) i)*7e-5f), std::log(((float) i)*0.34e-28f), std::log(((float) i)*0.98e-39f),
 					 std::log(((float) i)*7e-4f), std::log(((float) i)*7e-5f), std::log(((float) i)*0.34e-28f), std::log(((float) i)*0.98e-39f));
 #endif
@@ -207,24 +205,22 @@ int	main (int argc, char *argv[]) {
 
 	for (size_t i=1; i<nIters; i++) {
 #if	defined(__AVX512F__)
-		_MData_ tVar = opCode(set_ps, ((float) i)*7e-4f,   ((float) i)*7e-5f,     ((float) i)*0.25e-5f,  ((float) i)*0.14e-6f,
+		_MData_ sVar = opCode(set_ps, ((float) i)*7e-4f,   ((float) i)*7e-5f,     ((float) i)*0.25e-5f,  ((float) i)*0.14e-6f,
 					      ((float) i)*7e-4f,   ((float) i)*7e-5f,     ((float) i)*0.25e-5f,  ((float) i)*0.14e-6f,
 					      ((float) i)*0.1e-8f, ((float) i)*0.49e-18f, ((float) i)*0.34e-28f, ((float) i)*0.98e-39f,
 					      ((float) i)*0.1e-8f, ((float) i)*0.49e-18f, ((float) i)*0.34e-28f, ((float) i)*0.98e-39f);
 #else
-		_MData_ tVar = opCode(set_ps, ((float) i)*7e-4f, ((float) i)*7e-5f, ((float) i)*0.34e-28f, ((float) i)*0.98e-39f,
+		_MData_ sVar = opCode(set_ps, ((float) i)*7e-4f, ((float) i)*7e-5f, ((float) i)*0.34e-28f, ((float) i)*0.98e-39f,
 					      ((float) i)*7e-4f, ((float) i)*7e-5f, ((float) i)*0.34e-28f, ((float) i)*0.98e-39f);
-//		_MData_ tVar = opCode(set_ps, ((float) i)*7e-4f,   ((float) i)*7e-5f,     ((float) i)*0.25e-5f,  ((float) i)*0.14e-6f,
-//					      ((float) i)*0.1e-8f, ((float) i)*0.49e-18f, ((float) i)*0.34e-28f, ((float) i)*0.98e-39f);
 #endif
-		news[i] = opCode(log_ps, tVar);
+		news[i] = opCode(log_ps, sVar);
 	}
 
 	stop  = std::chrono::high_resolution_clock::now();
 	avxElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
 
-	printf ("Speedup\t\tx%.2lf\n", ((double) stdElapsed.count())/((double) avxElapsed.count()));
 	printf ("Avx took %lu nanoseconds\n", avxElapsed); fflush(stdout);
+	printf ("Speedup\t\tx%.2lf\n", ((double) stdElapsed.count())/((double) avxElapsed.count()));
 	float	fMax = 0.f;
 	int	iMax = 0;
 	int	kMax = 0;
@@ -255,13 +251,15 @@ int	main (int argc, char *argv[]) {
 
 	start = std::chrono::high_resolution_clock::now();
 
-	for (size_t i=1; i<nIters; i++) {
+	for (int k=0; k<2; k++) {
+		for (size_t i=1; i<nIters; i++) {
 #if	defined(__AVX512F__)
-		based[i] = opCode(set_pd, std::log(((double) i)*7e-4),   std::log(((double) i)*7e-5),     std::log(((double) i)*0.25e-5),  std::log(((double) i)*0.14e-6),
-					  std::log(((double) i)*0.1e-8), std::log(((double) i)*0.49e-18), std::log(((double) i)*0.34e-28), std::log(((double) i)*0.98e-39));
+			based[i] = opCode(set_pd, std::log(((double) i)*7e-4),   std::log(((double) i)*7e-5),     std::log(((double) i)*0.25e-5),  std::log(((double) i)*0.14e-6),
+						  std::log(((double) i)*0.1e-8), std::log(((double) i)*0.49e-18), std::log(((double) i)*0.34e-28), std::log(((double) i)*0.98e-39));
 #else
-		based[i] = opCode(set_pd, std::log(((double) i)*7e-4),   std::log(((double) i)*7e-5),     std::log(((double) i)*0.34e-28), std::log(((double) i)*0.98e-39));
+			based[i] = opCode(set_pd, std::log(((double) i)*7e-4),   std::log(((double) i)*7e-5),     std::log(((double) i)*0.34e-28), std::log(((double) i)*0.98e-39));
 #endif
+		}
 	}
 
 	stop  = std::chrono::high_resolution_clock::now();
@@ -270,27 +268,25 @@ int	main (int argc, char *argv[]) {
 
 	start = std::chrono::high_resolution_clock::now();
 
-	for (size_t i=1; i<nIters; i++) {
+	for (int k=0; k<2; k++) {
+		for (size_t i=1; i<nIters; i++) {
 #if	defined(__AVX512F__)
-		__m512d dVar = opCode(set_pd, ((double) i)*7e-4,   ((double) i)*7e-5,     ((double) i)*0.25e-5,  ((double) i)*0.14e-6,
-					      ((double) i)*0.1e-8, ((double) i)*0.49e-18, ((double) i)*0.34e-28, ((double) i)*0.98e-39);
+			__m512d dVar = opCode(set_pd, ((double) i)*7e-4,   ((double) i)*7e-5,     ((double) i)*0.25e-5,  ((double) i)*0.14e-6,
+						      ((double) i)*0.1e-8, ((double) i)*0.49e-18, ((double) i)*0.34e-28, ((double) i)*0.98e-39);
 #else
-		__m256d dVar = opCode(set_pd, ((double) i)*7e-4,   ((double) i)*7e-5,     ((double) i)*0.34e-28, ((double) i)*0.98e-39);
+			__m256d dVar = opCode(set_pd, ((double) i)*7e-4,   ((double) i)*7e-5,     ((double) i)*0.34e-28, ((double) i)*0.98e-39);
 #endif
-		newsd[i] = opCode(log_pd, dVar);
+			newsd[i] = opCode(log_pd, dVar);
+		}
 	}
 
 	stop  = std::chrono::high_resolution_clock::now();
 	avxElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
 
-	printf ("Speedup\t\tx%.2lf\n", ((double) stdElapsed.count())/((double) avxElapsed.count()));
 	printf ("Avx took %lu nanoseconds\n", avxElapsed); fflush(stdout);
+	printf ("Speedup\t\tx%.2lf\n", ((double) stdElapsed.count())/((double) avxElapsed.count()));
 	double	dMax = 0.0;
 	for (size_t i=1; i<nIters; i++) {
-	/*	if ((i%1048576) == 0) {
-			printdVar(based[i], "base");
-			printdVar(newsd[i], "news");
-		}*/
 		outsd[i] = opCode(div_pd, opCode(sub_pd, based[i], newsd[i]), based[i]);
 		for (int k=0; k<nSimd/2; k++)
 			if (std::abs(outs[i][k]) > dMax) {
@@ -300,4 +296,111 @@ int	main (int argc, char *argv[]) {
 			}
 	}
 	printf ("Max error %d %.16le (M %.16le S %.16le)\n", iMax, dMax, newsd[iMax][kMax], based[iMax][kMax]); fflush(stdout);
+
+	printf("Exponential test\n");
+
+	start = std::chrono::high_resolution_clock::now();
+
+	for (size_t i=0; i<nIters; i++) {
+#if	defined(__AVX512F__)
+		base[i] = opCode(set_ps, std::exp(((float) i)*7e-9f),   std::exp(((float) i)*7e-7f),     std::exp(((float) i)*0.25e-5f),  std::exp(((float) i)*0.14e-6f),
+					 std::exp(((float) i)*7e-9f),   std::exp(((float) i)*7e-7f),     std::exp(((float) i)*0.25e-5f),  std::exp(((float) i)*0.14e-6f),
+					 std::exp(((float) i)*0.1e-8f), std::exp(((float) i)*0.49e-18f), std::exp(((float) i)*0.34e-28f), std::exp(((float) i)*0.98e-39f),
+					 std::exp(((float) i)*0.1e-8f), std::exp(((float) i)*0.49e-18f), std::exp(((float) i)*0.34e-28f), std::exp(((float) i)*0.98e-39f));
+#else
+		base[i] = opCode(set_ps, std::exp(((float) i)*7e-9f), std::exp(((float) i)*7e-7f), std::exp(((float) i)*0.34e-28f), std::exp(((float) i)*0.98e-39f),
+					 std::exp(((float) i)*6e-9f), std::exp(((float) i)*6e-7f), std::exp(((float) i)*0.24e-28f), std::exp(((float) i)*0.88e-39f));
+#endif
+	}
+
+	stop  = std::chrono::high_resolution_clock::now();
+	stdElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+	printf ("Std took %lu nanoseconds\n", stdElapsed); fflush(stdout);
+
+	start = std::chrono::high_resolution_clock::now();
+
+	for (size_t i=0; i<nIters; i++) {
+#if	defined(__AVX512F__)
+		_MData_ sVar = opCode(set_ps, ((float) i)*7e-9f,   ((float) i)*7e-7f,     ((float) i)*0.25e-5f,  ((float) i)*0.14e-6f,
+					      ((float) i)*7e-9f,   ((float) i)*7e-7f,     ((float) i)*0.25e-5f,  ((float) i)*0.14e-6f,
+					      ((float) i)*0.1e-8f, ((float) i)*0.49e-18f, ((float) i)*0.34e-28f, ((float) i)*0.98e-39f,
+					      ((float) i)*0.1e-8f, ((float) i)*0.49e-18f, ((float) i)*0.34e-28f, ((float) i)*0.98e-39f);
+#else
+		_MData_ sVar = opCode(set_ps, ((float) i)*7e-9f, ((float) i)*7e-7f, ((float) i)*0.34e-28f, ((float) i)*0.98e-39f,
+					      ((float) i)*6e-9f, ((float) i)*6e-7f, ((float) i)*0.24e-28f, ((float) i)*0.88e-39f);
+#endif
+		news[i] = opCode(exp_ps, sVar);
+	}
+
+	stop  = std::chrono::high_resolution_clock::now();
+	avxElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+
+	printf ("Avx took %lu nanoseconds\n", avxElapsed); fflush(stdout);
+	printf ("Speedup\t\tx%.2lf\n", ((double) stdElapsed.count())/((double) avxElapsed.count()));
+	fMax = 0.f;
+	iMax = 0;
+	kMax = 0;
+	for (size_t i=0; i<nIters; i++) {
+		outs[i] = opCode(div_ps, opCode(sub_ps, base[i], news[i]), base[i]);
+		for (int k=0; k<nSimd; k++)
+			if (std::abs(outs[i][k]) > fMax) {
+				fMax = std::abs(outs[i][k]);
+				iMax = i;
+				kMax = k;
+			}
+	}
+	printf ("Max error (%d, %d) %.8e (M %.8e S %.8e)\n", iMax, kMax, fMax, news[iMax][kMax], base[iMax][kMax]); fflush(stdout);
+
+	start = std::chrono::high_resolution_clock::now();
+
+	for (int k=0; k<2; k++) {
+		for (size_t i=0; i<nIters; i++) {
+#if	defined(__AVX512F__)
+			based[i] = opCode(set_pd, std::exp(((double) i)*7e-7),   std::exp(((double) i)*7e-9),     std::exp(((double) i)*0.25e-5),  std::exp(((double) i)*0.14e-6),
+						  std::exp(((double) i)*0.1e-8), std::exp(((double) i)*0.49e-18), std::exp(((double) i)*0.34e-28), std::exp(((double) i)*0.98e-39));
+#else
+			based[i] = opCode(set_pd, std::exp(((double) i)*7e-7),   std::exp(((double) i)*7e-9),     std::exp(((double) i)*0.34e-28), std::exp(((double) i)*0.98e-39));
+#endif
+		}
+	}
+
+	stop  = std::chrono::high_resolution_clock::now();
+	stdElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+	printf ("Std took %lu nanoseconds\n", stdElapsed); fflush(stdout);
+
+	start = std::chrono::high_resolution_clock::now();
+
+	for (int k=0; k<2; k++) {
+		for (size_t i=0; i<nIters; i++) {
+#if	defined(__AVX512F__)
+			__m512d dVar = opCode(set_pd, ((double) i)*7e-7,   ((double) i)*7e-9,     ((double) i)*0.25e-5,  ((double) i)*0.14e-6,
+						      ((double) i)*0.1e-8, ((double) i)*0.49e-18, ((double) i)*0.34e-28, ((double) i)*0.98e-39);
+#else
+			__m256d dVar = opCode(set_pd, ((double) i)*7e-7,   ((double) i)*7e-9,     ((double) i)*0.34e-28, ((double) i)*0.98e-39);
+#endif
+			newsd[i] = opCode(exp_pd, dVar);
+		}
+	}
+
+	stop  = std::chrono::high_resolution_clock::now();
+	avxElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+
+	printf ("Avx took %lu nanoseconds\n", avxElapsed); fflush(stdout);
+	printf ("Speedup\t\tx%.2lf\n", ((double) stdElapsed.count())/((double) avxElapsed.count()));
+	dMax = 0.0;
+	for (size_t i=0; i<nIters; i++) {
+		outsd[i] = opCode(div_pd, opCode(sub_pd, based[i], newsd[i]), based[i]);
+		for (int k=0; k<nSimd/2; k++)
+			if (std::abs(outs[i][k]) > dMax) {
+				dMax = std::abs(outsd[i][k]);
+				iMax = i;
+				kMax = k;
+			}
+	}
+	printf ("Max error %d %.16le (M %.16le S %.16le)\n", iMax, dMax, newsd[iMax][kMax], based[iMax][kMax]); fflush(stdout);
+
+	printf ("\nRandom number generator test\n"); fflush(stdout);
+	for (size_t i=0; i<16; i++) {
+		printsVar((genVRand<Simd_f>()).raw(), "Random");
+	}
 }
