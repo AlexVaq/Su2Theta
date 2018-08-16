@@ -13,6 +13,7 @@
 	#include "random/random.h"
 
 	#define _MData_ __m256
+	#define _MDatd_ __m256d
 	#define _MInt_  __m256i
 	#define _MHnt_  __m128i
 	#define _PREFIX_ _mm256
@@ -23,6 +24,68 @@
 
                 constexpr size_t sAlign = 32;
 
+		class	Simd_f;
+		class	Simd_d;
+
+		class	Mask_f	{
+                	static constexpr size_t nData = sAlign/sizeof(int);
+
+			private:
+
+			_MInt_	data;
+
+			public:
+
+				Mask_f()			: data(opCode(setzero_si256)) {}
+				Mask_f(const _MInt_ &in) 	: data(in) 		      {}
+
+
+			inline	Mask_f	 operator& (const Mask_f &b) {
+				return	opCode(castps_si256, opCode(and_ps, opCode(castsi256_ps, this->data), opCode(castsi256_ps, b.data)));
+			}
+
+			inline	Mask_f	&operator&=(const Mask_f &b) {
+				(*this) = (*this)&b;
+				return	(*this);
+			}
+
+			inline	Mask_f	 operator| (const Mask_f &b) {
+				return	opCode(castps_si256, opCode(or_ps,  opCode(castsi256_ps, this->data), opCode(castsi256_ps, b.data)));
+			}
+
+			inline	Mask_f	&operator|=(const Mask_f &b) {
+				(*this) = (*this)|b;
+				return	(*this);
+			}
+
+			inline	Mask_f	 operator! () {
+				return	opCode(castps_si256, opCode(xor_ps, opCode(castsi256_ps, this->data), opCode(castsi256_ps, opCode(set1_epi32, 0xffffffff))));
+			}
+
+			inline	int	Count() {
+				int count = 0;
+
+				for (int i=0; i<4; i++) {
+					auto &x = data[i];
+
+					if (x != 0) {
+						if (x == 0xffffffffffffffff)
+							count+=2;
+						else
+							count++;
+					}
+				}
+
+				return	count;
+			}
+
+			void	Print(const char *str)	{
+				printiVar(this->data, str);
+			}
+
+			friend	class	Simd_f;
+		};
+
 		class	Simd_f	{
 			private:
 
@@ -31,7 +94,13 @@
 			public:
 
                 	static constexpr size_t nData = sAlign/sizeof(float);
+                	static constexpr size_t xWide = 1;
+                	static constexpr size_t yWide = 2;
+                	static constexpr size_t zWide = 2;
+                	static constexpr size_t tWide = 2;
+
 			typedef float sData;
+			typedef Mask_f Mask;
 
 				Simd_f() {
 				data = opCode(setzero_ps);
@@ -116,6 +185,30 @@
 				return	opCode(mul_ps, this->data, opCode(set_ps, -1., 0., -1., 0., -1., 0., -1., 0.));
 			}
 
+			inline	Simd_f	operator^(const Mask_f &msk) {
+				return	opCode(and_ps, this->data, opCode(castsi256_ps, msk.data));
+			}
+
+			inline	Mask_f	operator>(const Simd_f &b) {
+				return	opCode(castps_si256, opCode(cmp_ps, this->data, b.data, _CMP_GT_OQ));
+			}
+
+			inline	Mask_f	operator>=(const Simd_f &b) {
+				return	opCode(castps_si256, opCode(cmp_ps, this->data, b.data, _CMP_GE_OQ));
+			}
+
+			inline	Mask_f	operator<(const Simd_f &b) {
+				return	opCode(castps_si256, opCode(cmp_ps, this->data, b.data, _CMP_LT_OQ));
+			}
+
+			inline	Mask_f	operator<=(const Simd_f &b) {
+				return	opCode(castps_si256, opCode(cmp_ps, this->data, b.data, _CMP_LE_OQ));
+			}
+
+			inline	Mask_f	operator==(const Simd_f &b) {
+				return	opCode(castps_si256, opCode(cmp_ps, this->data, b.data, _CMP_EQ_UQ));
+			}
+
 			inline	Simd_f	fma(const Simd_f &a, const Simd_f &b) {
 				return	opCode(fmadd_ps, this->data, a.data, b.data);
 			}
@@ -146,8 +239,13 @@
 			}
 
 			inline	float	Sum () {
-				return	opCode(hadd_ps, opCode(hadd_ps,
-						opCode(hadd_ps, (*this).data, opCode(permute2f128_ps, (*this).data, (*this).data, 0b00000001)), (*this).data), (*this).data)[0];
+				return	opCode(hadd_ps,
+						opCode(hadd_ps,
+							opCode(hadd_ps,
+								(*this).data,
+								opCode(permute2f128_ps, (*this).data, (*this).data, 0b00000001)),
+					       		(*this).data),
+					       	(*this).data)[0];
 			}
 
 			inline	float&	operator[](int lane) {
@@ -158,9 +256,276 @@
 				return	data;
 			}
 
+			void	Print(const char *str)	{
+				printsVar(this->data, str);
+			}
+
+			friend	class	Mask_f;
+
 			friend  Simd_f  sqrt    (const Simd_f&);
 			friend  Simd_f  cos     (const Simd_f&);
 			friend  Simd_f  sin     (const Simd_f&);
+			friend  Simd_f  log     (const Simd_f&);
+			friend  Simd_f  exp     (const Simd_f&);
+			friend  Simd_f  log2	(const Simd_f&);
+			friend  Simd_f  exp2	(const Simd_f&);
+			friend  Simd_f  abs     (const Simd_f&);
 		};
+
+		Simd_f	sqrt	(const Simd_f&);
+		Simd_f	cos	(const Simd_f&);
+		Simd_f	sin	(const Simd_f&);
+		Simd_f	log	(const Simd_f&);
+		Simd_f	exp	(const Simd_f&);
+		Simd_f	abs	(const Simd_f&);
+		Simd_f  log2	(const Simd_f&);
+		Simd_f  exp2	(const Simd_f&);
+
+		class	Mask_d	{
+                	static constexpr size_t nData = sAlign/sizeof(double);
+
+			private:
+
+			_MInt_	data;
+
+			public:
+
+				Mask_d()			: data(opCode(setzero_si256)) {}
+				Mask_d(const _MInt_ &in) 	: data(in) 		      {}
+
+
+			inline	Mask_d	 operator& (const Mask_d &b) {
+				return	opCode(castpd_si256, opCode(and_pd, opCode(castsi256_pd, this->data), opCode(castsi256_pd, b.data)));
+			}
+
+			inline	Mask_d	&operator&=(const Mask_d &b) {
+				(*this) = (*this)&b;
+				return	(*this);
+			}
+
+			inline	Mask_d	 operator| (const Mask_d &b) {
+				return	opCode(castpd_si256, opCode(or_pd,  opCode(castsi256_pd, this->data), opCode(castsi256_pd, b.data)));
+			}
+
+			inline	Mask_d	&operator|=(const Mask_d &b) {
+				(*this) = (*this)|b;
+				return	(*this);
+			}
+
+			inline	Mask_d	 operator! () {
+				return	opCode(castpd_si256, opCode(xor_pd, opCode(castsi256_pd, this->data), opCode(castsi256_pd, opCode(set1_epi32, 0xffffffff))));
+			}
+
+			inline	int	Count() {
+				int count = 0;
+
+				for (int i=0; i<4; i++) {
+					auto &x = data[i];
+
+					if (x != 0)
+						count++;
+				}
+
+				return	count;
+			}
+
+			void	Print(const char *str)	{
+				printiVar(this->data, str);
+			}
+
+			friend	class	Simd_d;
+		};
+
+		class	Simd_d	{
+			private:
+
+			_MDatd_	data;
+
+			public:
+
+                	static constexpr size_t nData = sAlign/sizeof(double);
+                	static constexpr size_t xWide = 1;
+                	static constexpr size_t yWide = 1;
+                	static constexpr size_t zWide = 2;
+                	static constexpr size_t tWide = 2;
+
+			typedef double sData;
+			typedef Mask_d Mask;
+
+				Simd_d() {
+				data = opCode(setzero_pd);
+			}
+
+				Simd_d(double x0, double x1, double x2, double x3) {
+				data = opCode(set_pd, x3, x2, x1, x0);
+			}
+
+				Simd_d(double x0) {
+				data = opCode(set1_pd, x0);
+			}
+
+				Simd_d(double *memAddress) {
+				data = opCode(load_pd, memAddress);
+			}
+
+				Simd_d(const _MDatd_ &in) : data(in) {};
+				Simd_d(_MDatd_ &&in) : data(std::move(in)) {};
+
+			inline	Simd_d&	operator=(const _MDatd_ &in) {
+				data = in;
+			}
+
+			inline	Simd_d&	operator=(_MDatd_ &&in) {
+				data = std::move(in);
+			}
+
+			void	save  (double *memAddress) {
+				opCode(store_pd,  memAddress, this->data);
+			}
+
+			void	stream (double *memAddress) {
+				opCode(stream_pd, memAddress, this->data);
+			}
+
+			inline	Simd_d	operator+(const Simd_d &x) {
+				return	opCode(add_pd, this->data, x.data);
+			}
+
+			inline	Simd_d	operator-(const Simd_d &x) {
+				return	opCode(sub_pd, this->data, x.data);
+			}
+
+			inline	Simd_d	operator*(const Simd_d &x) {
+				return	opCode(mul_pd, this->data, x.data);
+			}
+
+			inline	Simd_d	operator/(const Simd_d &x) {
+				return	opCode(div_pd, this->data, x.data);
+			}
+
+			inline	Simd_d &operator+=(const Simd_d &x) {
+				(*this) = (*this)+x;
+				return	(*this);
+			}
+
+			inline	Simd_d &operator-=(const Simd_d &x) {
+				(*this) = (*this)-x;
+				return	(*this);
+			}
+
+			inline	Simd_d &operator*=(const Simd_d &x) {
+				(*this) = (*this)*x;
+				return	(*this);
+			}
+
+			inline	Simd_d &operator/=(const Simd_d &x) {
+				(*this) = (*this)/x;
+				return	(*this);
+			}
+
+			inline	Simd_d	operator-() {
+				return	opCode(sub_pd, opCode(setzero_pd), this->data);
+			}
+
+			inline	Simd_d	operator!() {
+				return	opCode(add_pd, opCode(permute_pd, this->data, 0b00000101), this->data);
+			}
+
+			inline	Simd_d	operator~() {
+				return	opCode(mul_pd, this->data, opCode(set_pd, -1., 0., -1., 0.));
+			}
+
+			inline	Simd_d	operator^(const Mask_d &msk) {
+				return	opCode(and_pd, this->data, opCode(castsi256_pd, msk.data));
+			}
+
+			inline	Mask_d	operator>(const Simd_d &b) {
+				return	opCode(castpd_si256, opCode(cmp_pd, this->data, b.data, _CMP_GT_OQ));
+			}
+
+			inline	Mask_d	operator>=(const Simd_d &b) {
+				return	opCode(castpd_si256, opCode(cmp_pd, this->data, b.data, _CMP_GE_OQ));
+			}
+
+			inline	Mask_d	operator<(const Simd_d &b) {
+				return	opCode(castpd_si256, opCode(cmp_pd, this->data, b.data, _CMP_LT_OQ));
+			}
+
+			inline	Mask_d	operator<=(const Simd_d &b) {
+				return	opCode(castpd_si256, opCode(cmp_pd, this->data, b.data, _CMP_LE_OQ));
+			}
+
+			inline	Mask_d	operator==(const Simd_d &b) {
+				return	opCode(castpd_si256, opCode(cmp_pd, this->data, b.data, _CMP_EQ_UQ));
+			}
+
+			inline	Simd_d	fma(const Simd_d &a, const Simd_d &b) {
+				return	opCode(fmadd_pd, this->data, a.data, b.data);
+			}
+
+			inline	Simd_d	fms(const Simd_d &a, const Simd_d &b) {
+				return	opCode(fmsub_pd, this->data, a.data, b.data);
+			}
+
+			inline	Simd_d	xPermute () {
+				return	(*this);
+			}
+
+			inline	Simd_d	yPermute () {
+				return	(*this);
+			}
+
+			inline	Simd_d	zPermute () {
+				return	opCode(permute2f128_pd, this->data, this->data, 0b00000001);
+			}
+
+			inline	Simd_d	tPermute () {
+				return	opCode(permute_pd, this->data, 0b00000101);
+			}
+
+			inline	void	SetRandom () {
+				(*this) = Simd_d(Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand());
+			}
+
+			inline	double	Sum () {
+				return	opCode(hadd_pd,
+						opCode(hadd_pd,
+							(*this).data,
+							opCode(permute2f128_pd, (*this).data, (*this).data, 0b00000001)),
+					       	(*this).data)[0];
+			}
+
+			inline	double&	operator[](int lane) {
+				return	data[lane];
+			}
+
+			inline	_MDatd_&	raw() {
+				return	data;
+			}
+
+			void	Print(const char *str)	{
+				printdVar(this->data, str);
+			}
+
+			friend	class	Mask_f;
+
+			friend  Simd_d  sqrt	(const Simd_d&);
+			friend  Simd_d  cos	(const Simd_d&);
+			friend  Simd_d  sin	(const Simd_d&);
+			friend  Simd_d  log	(const Simd_d&);
+			friend  Simd_d  exp	(const Simd_d&);
+			friend  Simd_d  log2	(const Simd_d&);
+			friend  Simd_d  exp2	(const Simd_d&);
+			friend  Simd_d  abs	(const Simd_d&);
+		};
+
+		Simd_d	sqrt	(const Simd_d&);
+		Simd_d	cos	(const Simd_d&);
+		Simd_d	sin	(const Simd_d&);
+		Simd_d	log	(const Simd_d&);
+		Simd_d	exp	(const Simd_d&);
+		Simd_d	abs	(const Simd_d&);
+		Simd_d  log2	(const Simd_d&);
+		Simd_d  exp2	(const Simd_d&);
 	}
 #endif

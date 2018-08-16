@@ -1,8 +1,11 @@
 #ifndef	__VSU2_CLASS
 	#define	__VSU2_CLASS
 
+	#include "simd/simd.h"
 	#include "random/random.h"
 	#include <algorithm>
+
+	using namespace Simd;
 
 	template<typename vFloat>
 	class	vSu2	{
@@ -14,12 +17,18 @@
 
 		typedef		 vFloat        data;
 		typedef	typename vFloat::sData sData;
+		typedef	typename vFloat::Mask  Mask;
 
 		static constexpr size_t sWide = sizeof(vFloat)/sizeof(sData);
+		static constexpr size_t xWide = vFloat::xWide;
+		static constexpr size_t yWide = vFloat::yWide;
+		static constexpr size_t zWide = vFloat::zWide;
+		static constexpr size_t tWide = vFloat::tWide;
 
 		vSu2	() 					     { a[0] = vFloat(1.); a[1] = a[2] = a[3] = vFloat(0.); }
 		vSu2	(vFloat a0, vFloat a1, vFloat a2, vFloat a3) { a[0] = a0;   a[1] = a1;   a[2] = a2;   a[3] = a3;   }
 		vSu2	(vFloat *b)				     { for(int i=0;i<4;i++) a[i] = b[i]; }
+		vSu2	(sData   c)				     { a[0] = a[1] = a[2] = a[3] = vFloat(c); }
 
 
 		/*	Vectorized datatypes(CPU)	*/
@@ -36,7 +45,8 @@
 		}
 
 		vSu2	operator*=(const vSu2 &b) {
-			return	(*this * b);
+			(*this) = (*this)*b;
+			return	(*this);
 		}
 
 		vSu2	operator+ (const vSu2 &b) {
@@ -51,7 +61,8 @@
 		}
 
 		vSu2	operator+=(const vSu2 &b) {
-			return	(*this + b);
+			(*this) = (*this)+b;
+			return	(*this);
 		}
 
 		vSu2	operator- (const vSu2 &b) {
@@ -65,18 +76,20 @@
 			return	tmp;
 		}
 
+		vSu2	operator-=(const vSu2 &b) {
+			(*this) = (*this)-b;
+			return	(*this);
+		}
+
 		vSu2	operator! () {
 			vSu2	tmp;
 
+			tmp.a[0] =  a[0];
 			tmp.a[1] = -a[1];
 			tmp.a[2] = -a[2];
 			tmp.a[3] = -a[3];
 
 			return	tmp;
-		}
-
-		vSu2	operator-=(const vSu2 &b) {
-			return	(*this - b);
 		}
 
 		vSu2	operator* (const vFloat &b) {
@@ -91,7 +104,17 @@
 		}
 
 		vSu2	operator*=(const vFloat &b) {
-			return	(*this * b);
+			(*this) = (*this)*b;
+			return	(*this);
+		}
+
+		vSu2	operator* (const sData &b) {
+			return	(*this)*vFloat(b);
+		}
+
+		vSu2	operator*=(const sData &b) {
+			(*this) = (*this)*b;
+			return	(*this);
 		}
 
 		vFloat	Norm() {
@@ -110,39 +133,50 @@
 			return	(*this)/sqrt(Norm());
 		}
 
-
 		vSu2&	GenHeat(const sData e2) {
-
+			vSu2   tmp;
 			vFloat r, s, z;
-			const  vFloat oDet = sqrt(Norm());
-			const  vFloat e    = oDet*vFloat(e2);
-			const  vFloat b    = exp(e*vFloat(-2.));
+			vFloat oDet = sqrt(Norm());
+			vFloat uDet = vFloat(1.)/oDet;
+			vFloat e    = oDet*vFloat(e2);
+			vFloat b    = exp(e*vFloat(-2.));
+			vFloat aN;
+			Mask   msk, tMsk;
+			bool   notReady;
 
 			do {
-				r    = Su2Rand::genVRand<vFloat>();
-				s    = (vFloat(1.) - r) * b + r;
-				a[0] = vFloat(1.) + log(s) / e;
+				r  = Su2Rand::genVRand<vFloat>();
+				s  = (vFloat(1.) - r) * b + r;
+				aN = vFloat(1.) + log(s) / e;
 
-				r    = Su2Rand::genVRand<vFloat>();
-				s    = r*r;
-				z    = vFloat(1.) - a[0]*a[0];
-			}	while (s > z);
+				r  = Su2Rand::genVRand<vFloat>();
+				s  = r*r;
+				z  = vFloat(1.) - aN*aN;
 
+				msk = (s<=z);
+				tmp.a[0] = (aN^msk) + (tmp.a[0]^(!msk));
+				tMsk |= msk;
+				notReady = (tMsk.Count() != vFloat::nData) ? true : false;
+			}	while (notReady);
+
+			z    = vFloat(1.) - tmp.a[0]*tmp.a[0];
 			s    = sqrt(z);
 			r    = Su2Rand::genVRand<vFloat>();
 
-			a[3] = (vFloat(2.)*r - vFloat(1.))*s;
+			tmp.a[3] = (vFloat(2.)*r - vFloat(1.))*s;
 
-			s    = sqrt(z - a[3]*a[3]);
+			s    = sqrt(abs(z - tmp.a[3]*tmp.a[3]));
 			r    = vFloat(2.)*vFloat(M_PI)*Su2Rand::genVRand<vFloat>();
 
-			a[1] = s*cos(r);
-			a[2] = s*sin(r);
+			tmp.a[1] = s*cos(r);
+			tmp.a[2] = s*sin(r);
 
-			a[0] /= oDet;
-			a[1] /= oDet;
-			a[2] /= oDet;
-			a[3] /= oDet;
+			a[0] *=  uDet;
+			a[1] *= -uDet;
+			a[2] *= -uDet;
+			a[3] *= -uDet;
+
+			(*this) = tmp*(*this);
 
 			return	(*this);
 		}
@@ -202,6 +236,13 @@
 			for (int i=0; i<4; i++)
 				tmp.a[i] = a[i].tPermute();
 			return	tmp;
+		}
+
+		void	Print() {
+			printsVar(a[0].raw(), "0: ");
+			printsVar(a[1].raw(), "1: ");
+			printsVar(a[2].raw(), "2: ");
+			printsVar(a[3].raw(), "3: ");
 		}
 	};
 #endif

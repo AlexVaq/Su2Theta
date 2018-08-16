@@ -48,7 +48,8 @@ constexpr double Inf_d = __builtin_inf();
 constexpr double Nan_d = __builtin_nan("");//0xFFFFF");
 
 constexpr size_t m32Mk = 0b0000000000000000000000000001111100000000000000000000000000011111;
-//constexpr size_t iSgMk = 0b1000000000000000000000000000000010000000000000000000000000000000;
+constexpr size_t iSgAb = 0b1000000000000000000000000000000010000000000000000000000000000000;
+constexpr size_t iSgAd = 0b1000000000000000000000000000000000000000000000000000000000000000;
 constexpr size_t iSgMk = 0b1100000000000000000000000000000011000000000000000000000000000000;
 constexpr size_t iFlMk = 0b1111100000000000000000000000000011111000000000000000000000000000;
 
@@ -344,6 +345,8 @@ constexpr _MHnt_  hTwo      = {  8589934594,  8589934594,  8589934594,  85899345
 constexpr _MHnt_  iZerh     = {           0,           0,           0,           0 };
 constexpr _MInt_  m32Mask   = {       m32Mk,       m32Mk,       m32Mk,       m32Mk,       m32Mk,       m32Mk,       m32Mk,       m32Mk };
 constexpr _MInt_  iSignMsk  = {       iSgMk,       iSgMk,       iSgMk,       iSgMk,       iSgMk,       iSgMk,       iSgMk,       iSgMk };
+constexpr _MInt_  iSgnAbsf  = {       iSgAb,       iSgAb,       iSgAb,       iSgAb,       iSgAb,       iSgAb,       iSgAb,       iSgAb };
+constexpr _MInt_  iSgnAbsd  = {       iSgAd,       iSgAd,       iSgAd,       iSgAd,       iSgAd,       iSgAd,       iSgAd,       iSgAd };
 constexpr _MInt_  iFillMsk  = {       iFlMk,       iFlMk,       iFlMk,       iFlMk,       iFlMk,       iFlMk,       iFlMk,       iFlMk };
 constexpr _MHnt_  h32Mask   = {       m32Mk,       m32Mk,       m32Mk,       m32Mk };
 constexpr _MHnt_  hSignMsk  = {       iSgMk,       iSgMk,       iSgMk,       iSgMk };
@@ -412,6 +415,8 @@ constexpr _MHnt_  hOne      = {  4294967297,  4294967297 };
 constexpr _MHnt_  hTwo      = {  8589934594,  8589934594 };
 constexpr _MInt_  m32Mask   = {       m32Mk,       m32Mk,       m32Mk,       m32Mk };
 constexpr _MInt_  iSignMsk  = {       iSgMk,       iSgMk,       iSgMk,       iSgMk };
+constexpr _MInt_  iSgnAbsf  = {       iSgAb,       iSgAb,       iSgAb,       iSgAb };
+constexpr _MInt_  iSgnAbsd  = {       iSgAd,       iSgAd,       iSgAd,       iSgAd };
 constexpr _MInt_  iFillMsk  = {       iFlMk,       iFlMk,       iFlMk,       iFlMk };
 constexpr _MHnt_  h32Mask   = {       m32Mk,       m32Mk };
 constexpr _MHnt_  hSignMsk  = {       iSgMk,       iSgMk };
@@ -470,6 +475,8 @@ constexpr _MInt_  one       = {  4294967297,  4294967297 };
 constexpr _MInt_  two       = {  8589934594,  8589934594 };
 constexpr _MInt_  m32Mask   = {       m32Mk,       m32Mk };
 constexpr _MInt_  iSignMsk  = {       iSgMk,       iSgMk };
+constexpr _MInt_  iSgnAbsf  = {       iSgAb,       iSgAb };
+constexpr _MInt_  iSgnAbsd  = {       iSgAd,       iSgAd };
 constexpr _MInt_  iFillMsk  = {       iFlMk,       iFlMk };
 #endif
 
@@ -534,6 +541,7 @@ constexpr float L1_f  = 0.021660805f;
 constexpr float L2_f  = 4.464396e-8f;
 constexpr float A1_f  = 0.50000405f;
 constexpr float A2_f  = 0.16666764f;
+constexpr float mEx_f = 1.17549435e-38f;
 
 constexpr float Sl00_f = 1.0000000f;	 constexpr float Sl01_f = 1.0218964f;	  constexpr float Sl02_f = 1.0442734f;	   constexpr float Sl03_f = 1.0671387f;
 constexpr float Sl04_f = 1.0905075f;	 constexpr float Sl05_f = 1.1143799f;	  constexpr float Sl06_f = 1.1387863f;	   constexpr float Sl07_f = 1.1637192f;
@@ -752,6 +760,8 @@ constexpr _MData_ vA1f      = {        A1_f,        A1_f,        A1_f,        A1
 			 	       A1_f,        A1_f,        A1_f,        A1_f,        A1_f,        A1_f,        A1_f,        A1_f };
 constexpr _MData_ vA2f      = {        A2_f,        A2_f,        A2_f,        A2_f,        A2_f,        A2_f,        A2_f,        A2_f,
 				       A2_f,        A2_f,        A2_f,        A2_f,        A2_f,        A2_f,        A2_f,        A2_f };
+constexpr _MData_ vExpf     = {       mEx_f,       mEx_f,       mEx_f,       mEx_f,       mEx_f,       mEx_f,       mEx_f,       mEx_f,
+				      mEx_f,       mEx_f,       mEx_f,       mEx_f,       mEx_f,       mEx_f,       mEx_f,       mEx_f };
 constexpr _MData_ vIvLf     = {       ivL_f,       ivL_f,       ivL_f,       ivL_f,       ivL_f,       ivL_f,       ivL_f,       ivL_f,
 				      ivL_f,       ivL_f,       ivL_f,       ivL_f,       ivL_f,       ivL_f,       ivL_f,       ivL_f };
 constexpr _MData_ vi2t7f    = {     1./128.,     1./128.,     1./128.,     1./128.,     1./128.,     1./128.,     1./128.,     1./128.,
@@ -800,6 +810,7 @@ constexpr _MData_ vL1f      = {        L1_f,        L1_f,        L1_f,        L1
 constexpr _MData_ vL2f      = {       -L2_f,       -L2_f,       -L2_f,       -L2_f,       -L2_f,       -L2_f,       -L2_f,       -L2_f };
 constexpr _MData_ vA1f      = {        A1_f,        A1_f,        A1_f,        A1_f,        A1_f,        A1_f,        A1_f,        A1_f };
 constexpr _MData_ vA2f      = {        A2_f,        A2_f,        A2_f,        A2_f,        A2_f,        A2_f,        A2_f,        A2_f };
+constexpr _MData_ vExpf     = {       mEx_f,       mEx_f,       mEx_f,       mEx_f,       mEx_f,       mEx_f,       mEx_f,       mEx_f };
 constexpr _MData_ vIvLf     = {       ivL_f,       ivL_f,       ivL_f,       ivL_f,       ivL_f,       ivL_f,       ivL_f,       ivL_f };
 constexpr _MData_ vi2t7f    = {   1.f/128.f,   1.f/128.f,   1.f/128.f,   1.f/128.f,   1.f/128.f,   1.f/128.f,   1.f/128.f,   1.f/128.f };
 constexpr _MData_ vB1f      = {        B1_f,        B1_f,        B1_f,        B1_f,        B1_f,        B1_f,        B1_f,        B1_f };
@@ -834,6 +845,7 @@ constexpr _MData_ vL1f      = {        L1_f,        L1_f,        L1_f,        L1
 constexpr _MData_ vL2f      = {       -L2_f,       -L2_f,       -L2_f,       -L2_f };
 constexpr _MData_ vA1f      = {        A1_f,        A1_f,        A1_f,        A1_f };
 constexpr _MData_ vA2f      = {        A2_f,        A2_f,        A2_f,        A2_f };
+constexpr _MData_ vExpf     = {       mEx_f,       mEx_f,       mEx_f,       mEx_f };
 constexpr _MData_ vIvLf     = {       ivL_f,       ivL_f,       ivL_f,       ivL_f };
 constexpr _MData_ vi2t7f    = {     1./128.,     1./128.,     1./128.,     1./128. };
 constexpr _MData_ vB1f      = {        B1_f,        B1_f,        B1_f,        B1_f };

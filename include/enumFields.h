@@ -69,5 +69,44 @@
 			ProfFold,
 			ProfHdf5,
 		}	ProfType;
+
+		typedef	enum	Permutation_s
+		{
+			NoPermutation   = 0b0000,
+			PermutationX    = 0b0001,
+			PermutationY    = 0b0010,
+			PermutationZ    = 0b0100,
+			PermutationT    = 0b1000,
+			PermutationXY   = 0b0011,
+			PermutationXZ   = 0b0101,
+			PermutationXT   = 0b1001,
+			PermutationYZ   = 0b0110,
+			PermutationYT   = 0b1010,
+			PermutationZT   = 0b1100,
+			PermutationXYZ  = 0b0111,
+			PermutationXYT  = 0b1011,
+			PermutationXZT  = 0b1101,
+			PermutationYZT  = 0b1110,
+			PermutationXYZT = 0b1111,
+		}	Permutation;
+
+#ifdef	__NVCC__
+	#define	Attr	inline constexpr __host__ __device__
+#else
+	#define	Attr	inline constexpr
+#endif
+		template<typename enumFlag>
+		Attr enumFlag  operator &  (enumFlag  lhs, const enumFlag rhs) { return static_cast<enumFlag>(static_cast<int>(lhs) & static_cast<const int>(rhs)); }
+		template<typename enumFlag>
+		Attr enumFlag& operator &= (enumFlag &lhs, const enumFlag rhs) { lhs  = static_cast<enumFlag>(static_cast<int>(lhs) & static_cast<const int>(rhs)); return lhs; }
+		template<typename enumFlag>
+		Attr enumFlag  operator |  (enumFlag  lhs, const enumFlag rhs) { return static_cast<enumFlag>(static_cast<int>(lhs) | static_cast<const int>(rhs)); }
+		template<typename enumFlag>
+		Attr enumFlag& operator |= (enumFlag &lhs, const enumFlag rhs) { lhs  = static_cast<enumFlag>(static_cast<int>(lhs) | static_cast<const int>(rhs)); return lhs; }
+		template<typename enumFlag>
+		Attr enumFlag  operator ^  (enumFlag  lhs, const enumFlag rhs) { return static_cast<enumFlag>(static_cast<int>(lhs) ^ static_cast<const int>(rhs)); }
+		template<typename enumFlag>
+		Attr enumFlag& operator ^= (enumFlag &lhs, const enumFlag rhs) { lhs  = static_cast<enumFlag>(static_cast<int>(lhs) ^ static_cast<const int>(rhs)); return lhs; }
+#undef	Attr
 	}
 #endif

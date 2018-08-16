@@ -16,11 +16,15 @@
 		typedef	Float sData;
 
 		static constexpr size_t sWide = 1;
+		static constexpr size_t xWide = 1;
+		static constexpr size_t yWide = 1;
+		static constexpr size_t zWide = 1;
+		static constexpr size_t tWide = 1;
 
 		Su2	() 					 { a[0] = 1.; a[1] = a[2] = a[3] = 0.; }
 		Su2	(Float a0, Float a1, Float a2, Float a3) { a[0] = a0;   a[1] = a1;   a[2] = a2;   a[3] = a3;   }
 		Su2	(Float *b)				 { std::copy(b, b+4, a); }
-		//Su2	(Float *b)				 { a[0] = b[0]; a[1] = b[1]; a[2] = b[2]; a[3] = b[3]; }
+		Su2	(Float  c)				 { a[0] = a[1] = a[2] = a[3] = c; }
 
 
 		/*	No Vectorization (GPU)	*/
@@ -37,7 +41,8 @@
 		}
 
 		Su2	operator*=(const Su2 &b) {
-			return	(*this * b);
+			(*this) = (*this)*b;
+			return	(*this);
 		}
 
 		Su2	operator+ (const Su2 &b) {
@@ -52,7 +57,8 @@
 		}
 
 		Su2	operator+=(const Su2 &b) {
-			return	(*this + b);
+			(*this) = (*this)+b;
+			return	(*this);
 		}
 
 		Su2	operator- (const Su2 &b) {
@@ -66,18 +72,20 @@
 			return	tmp;
 		}
 
+		Su2	operator-=(const Su2 &b) {
+			(*this) = (*this)-b;
+			return	(*this);
+		}
+
 		Su2	operator! () {
 			Su2	tmp;
 
+			tmp.a[0] =  a[0];
 			tmp.a[1] = -a[1];
 			tmp.a[2] = -a[2];
 			tmp.a[3] = -a[3];
 
 			return	tmp;
-		}
-
-		Su2	operator-=(const Su2 &b) {
-			return	(*this - b);
 		}
 
 		Su2	operator* (const Float &b) {
@@ -92,7 +100,8 @@
 		}
 
 		Su2	operator*=(const Float &b) {
-			return	(*this * b);
+			(*this) = (*this)*b;
+			return	(*this);
 		}
 
 		Float	Norm() {
@@ -113,37 +122,40 @@
 
 
 		Su2&	GenHeat(const Float e2) {
-
+			Su2   tmp;
 			Float r, s, z;
-			const  Float oDet = sqrt(Norm());
-			const  Float e    = e2*oDet;
-			const  Float b    = exp(((Float) -2.) * e);
+			const Float oDet = sqrt(Norm());
+			const Float uDet = 1./oDet;
+			const Float e    = e2*oDet;
+			const Float b    = exp(((Float) -2.) * e);
 
 			do {
-				r    = Su2Rand::genRand();
-				s    = (((Float) 1.) - r) * b + r;
-				a[0] = ((Float) 1.) + log(s) / e;
+				r = Su2Rand::genRand();
+				s = (((Float) 1.) - r) * b + r;
+				tmp.a[0] = ((Float) 1.) + log(s) / e;
 
-				r    = Su2Rand::genRand();
-				s    = r*r;
-				z    = ((Float) 1.) - a[0]*a[0];
+				r = Su2Rand::genRand();
+				s = r*r;
+				z = ((Float) 1.) - tmp.a[0]*tmp.a[0];
 			}	while (s > z);
 
-			s    = sqrt(z);
-			r    = Su2Rand::genRand();
+			s = sqrt(z);
+			r = Su2Rand::genRand();
 
-			a[3] = (((Float) 2.)*r - ((Float) 1.))*s;
+			tmp.a[3] = (((Float) 2.)*r - ((Float) 1.))*s;
 
-			s    = sqrt(z - a[3]*a[3]);
-			r    = ((Float) 2.)*((Float) M_PI)*Su2Rand::genRand();
+			s = sqrt(std::abs(z - tmp.a[3]*tmp.a[3]));
+			r = ((Float) 2.)*((Float) M_PI)*Su2Rand::genRand();
 
-			a[1] = s*cos(r);
-			a[2] = s*sin(r);
+			tmp.a[1] = s*cos(r);
+			tmp.a[2] = s*sin(r);
 
-			a[0] /= oDet;
-			a[1] /= oDet;
-			a[2] /= oDet;
-			a[3] /= oDet;
+			a[0] *=  uDet;
+			a[1] *= -uDet;
+			a[2] *= -uDet;
+			a[3] *= -uDet;
+
+			(*this) = tmp*(*this);
 
 			return	(*this);
 		}
@@ -188,5 +200,10 @@
 		Su2	tPermute() {
 			return	(*this);
 		}
+
+		void	Print() {
+			printf ("%+.3f %+.3f %+.3f %+.3f\n", a[0], a[1], a[2], a[3]);
+		}
+
 	};
 #endif

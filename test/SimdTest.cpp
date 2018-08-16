@@ -31,7 +31,7 @@ typedef union ieee754_d {
 
 int	main (int argc, char *argv[]) {
 
-	constexpr size_t nIters = 4294967296/128;
+	constexpr size_t nIters = 12577218+1;//4294967296/128;
 	constexpr size_t pFreq  = 268435456/64;
 
 	initSu2 (argc, argv);
@@ -221,14 +221,12 @@ int	main (int argc, char *argv[]) {
 
 	printf ("Avx took %lu nanoseconds\n", avxElapsed); fflush(stdout);
 	printf ("Speedup\t\tx%.2lf\n", ((double) stdElapsed.count())/((double) avxElapsed.count()));
+
 	float	fMax = 0.f;
 	int	iMax = 0;
 	int	kMax = 0;
+
 	for (size_t i=1; i<nIters; i++) {
-	/*	if ((i%1048576) == 0) {
-			printsVar(base[i], "base");
-			printsVar(news[i], "news");
-		}*/
 		outs[i] = opCode(div_ps, opCode(sub_ps, base[i], news[i]), base[i]);
 		for (int k=0; k<nSimd; k++)
 			if (std::abs(outs[i][k]) > fMax) {
@@ -303,13 +301,13 @@ int	main (int argc, char *argv[]) {
 
 	for (size_t i=0; i<nIters; i++) {
 #if	defined(__AVX512F__)
-		base[i] = opCode(set_ps, std::exp(((float) i)*7e-9f),   std::exp(((float) i)*7e-7f),     std::exp(((float) i)*0.25e-5f),  std::exp(((float) i)*0.14e-6f),
-					 std::exp(((float) i)*7e-9f),   std::exp(((float) i)*7e-7f),     std::exp(((float) i)*0.25e-5f),  std::exp(((float) i)*0.14e-6f),
-					 std::exp(((float) i)*0.1e-8f), std::exp(((float) i)*0.49e-18f), std::exp(((float) i)*0.34e-28f), std::exp(((float) i)*0.98e-39f),
-					 std::exp(((float) i)*0.1e-8f), std::exp(((float) i)*0.49e-18f), std::exp(((float) i)*0.34e-28f), std::exp(((float) i)*0.98e-39f));
+		base[i] = opCode(set_ps, std::exp(((float) i)*7e-9f),     std::exp(((float) i)*7e-6f),       std::exp(((float) i)*0.25e-5f),     std::exp(((float) i)*0.14e-6f),
+					 std::exp(((float) i)*(-7e-9f)),  std::exp(((float) i)*(-7e-6f)),    std::exp(((float) i)*(-0.25e-5f)),  std::exp(((float) i)*(-0.14e-6f)),
+					 std::exp(((float) i)*0.1e-8f),   std::exp(((float) i)*0.49e-18f),   std::exp(((float) i)*0.34e-28f),    std::exp(((float) i)*0.98e-39f),
+					 std::exp(((float) i)*(-0.1e-8f)),std::exp(((float) i)*(-0.49e-18f)),std::exp(((float) i)*(-0.34e-28f)), std::exp(((float) i)*(-0.98e-39f)));
 #else
-		base[i] = opCode(set_ps, std::exp(((float) i)*7e-9f), std::exp(((float) i)*7e-7f), std::exp(((float) i)*0.34e-28f), std::exp(((float) i)*0.98e-39f),
-					 std::exp(((float) i)*6e-9f), std::exp(((float) i)*6e-7f), std::exp(((float) i)*0.24e-28f), std::exp(((float) i)*0.88e-39f));
+		base[i] = opCode(set_ps, std::exp(((float) i)*(-7e-6f)),  std::exp(((float) i)*7e-6f),       std::exp(((float) i)*0.34e-28f),    std::exp(((float) i)*(-0.98e-39f)),
+					 std::exp(((float) i)*(-6e-9f)),  std::exp(((float) i)*6e-7f),       std::exp(((float) i)*(-0.24e-28f)), std::exp(((float) i)*0.88e-39f));
 #endif
 	}
 
@@ -321,13 +319,13 @@ int	main (int argc, char *argv[]) {
 
 	for (size_t i=0; i<nIters; i++) {
 #if	defined(__AVX512F__)
-		_MData_ sVar = opCode(set_ps, ((float) i)*7e-9f,   ((float) i)*7e-7f,     ((float) i)*0.25e-5f,  ((float) i)*0.14e-6f,
-					      ((float) i)*7e-9f,   ((float) i)*7e-7f,     ((float) i)*0.25e-5f,  ((float) i)*0.14e-6f,
-					      ((float) i)*0.1e-8f, ((float) i)*0.49e-18f, ((float) i)*0.34e-28f, ((float) i)*0.98e-39f,
-					      ((float) i)*0.1e-8f, ((float) i)*0.49e-18f, ((float) i)*0.34e-28f, ((float) i)*0.98e-39f);
+		_MData_ sVar = opCode(set_ps, ((float) i)*7e-9f,     ((float) i)*7e-6f,       ((float) i)*0.25e-5f,    ((float) i)*0.14e-6f,
+					      ((float) i)*(-7e-9f),  ((float) i)*(-7e-6f),    ((float) i)*(-0.25e-5f), ((float) i)*(-0.14e-6f),
+					      ((float) i)*0.1e-8f,   ((float) i)*0.49e-18f,   ((float) i)*0.34e-28f,   ((float) i)*0.98e-39f,
+					      ((float) i)*(-0.1e-8f),((float) i)*(-0.49e-18f),((float) i)*(-0.34e-28f),((float) i)*(-0.98e-39f));
 #else
-		_MData_ sVar = opCode(set_ps, ((float) i)*7e-9f, ((float) i)*7e-7f, ((float) i)*0.34e-28f, ((float) i)*0.98e-39f,
-					      ((float) i)*6e-9f, ((float) i)*6e-7f, ((float) i)*0.24e-28f, ((float) i)*0.88e-39f);
+		_MData_ sVar = opCode(set_ps, ((float) i)*(-7e-6f), ((float) i)*7e-6f, ((float) i)*0.34e-28f,    ((float) i)*(-0.98e-39f),
+					      ((float) i)*(-6e-9f), ((float) i)*6e-7f, ((float) i)*(-0.24e-28f), ((float) i)*0.88e-39f);
 #endif
 		news[i] = opCode(exp_ps, sVar);
 	}
@@ -341,6 +339,10 @@ int	main (int argc, char *argv[]) {
 	iMax = 0;
 	kMax = 0;
 	for (size_t i=0; i<nIters; i++) {
+	//	if ((i%1048576) != 0) {
+	//		printsVar(base[i], "base");
+	//		printsVar(news[i], "news");
+	//	}
 		outs[i] = opCode(div_ps, opCode(sub_ps, base[i], news[i]), base[i]);
 		for (int k=0; k<nSimd; k++)
 			if (std::abs(outs[i][k]) > fMax) {
@@ -403,4 +405,7 @@ int	main (int argc, char *argv[]) {
 	for (size_t i=0; i<16; i++) {
 		printsVar((genVRand<Simd_f>()).raw(), "Random");
 	}
+	(exp(Simd_f(-174.0f))).Print("Avx");
+	(exp(Simd_f(-175.0f))).Print("Avx");
+	(exp(Simd_f(-176.0f))).Print("Avx");
 }

@@ -44,7 +44,7 @@
 
 #ifndef	__INTEL_COMPILER
 
-inline _MData_	opCode(exp_pd, _MData_ &x) {
+inline _MData_	opCode(exp_pd, _MData_ x) {
 	_MInt_	xM;
 	_MHnt_	N, M, n1, n2;
 	_MData_ nf, R1, R2, R, Q, Sl, St, S;
@@ -96,9 +96,18 @@ inline _MData_	opCode(exp_pd, _MData_ &x) {
 //	Sl  = opCode(set_pd, sLead_d[vals[3]], sLead_d[vals[2]], sLead_d[vals[1]], sLead_d[vals[0]]);
 //	St  = opCode(set_pd, sTrail_d[vals[3]], sTrail_d[vals[2]], sTrail_d[vals[1]], sTrail_d[vals[0]]);
 //#endif
+#if	defined(__AVX512F__)
+	Sl  = opCode(i32gather_pd, n2, sLead_d.data(),  8);
+	St  = opCode(i32gather_pd, n2, sTrail_d.data(), 8);
+#elif	defined(__AVX2__)
 	Sl  = opCode(i32gather_pd, sLead_d.data(),  n2, 8);
 	St  = opCode(i32gather_pd, sTrail_d.data(), n2, 8);
-
+#else
+	int vals[4];
+	opCodl(store_si128, static_cast<__m128i*>(static_cast<void*>(vals)), n2);
+	Sl  = opCode(set_pd, sLead_d[vals[3]], sLead_d[vals[2]], sLead_d[vals[1]], sLead_d[vals[0]]);
+	St  = opCode(set_pd, sTrail_d[vals[3]], sTrail_d[vals[2]], sTrail_d[vals[1]], sTrail_d[vals[0]]);
+#endif
 	S   = opCode(add_pd, Sl, St);
 
 #if	defined(__AVX512F__)
@@ -119,7 +128,7 @@ inline _MData_	opCode(exp_pd, _MData_ &x) {
 
 }
 
-inline _MData_	opCode(log_pd, _MData_ &x) {
+inline _MData_	opCode(log_pd, _MData_ x) {
 
 	/*	1. Filtra negativos	*
 	 *	2. Filtra Nan		*/
@@ -172,9 +181,18 @@ inline _MData_	opCode(log_pd, _MData_ &x) {
 //	fc  = opCode(set_pd, cLead_d[vals[3]],  cLead_d[vals[2]],  cLead_d[vals[1]],  cLead_d[vals[0]]);
 //	i2  = opCode(set_pd, cTrail_d[vals[3]], cTrail_d[vals[2]], cTrail_d[vals[1]], cTrail_d[vals[0]]);
 //#endif
+#if	defined(__AVX512F__)
+	fc  = opCode(i32gather_pd, j, cLead_d.data(),  8);
+	i2  = opCode(i32gather_pd, j, cTrail_d.data(), 8);
+#elif	defined(__AVX2__)
 	fc  = opCode(i32gather_pd, cLead_d.data(),  j, 8);
 	i2  = opCode(i32gather_pd, cTrail_d.data(), j, 8);
-
+#else
+	int vals[4];
+	opCodl(store_si128, static_cast<__m128i*>(static_cast<void*>(vals)), j);
+	fc  = opCode(set_pd, cLead_d[vals[3]],  cLead_d[vals[2]],  cLead_d[vals[1]],  cLead_d[vals[0]]);
+	i2  = opCode(set_pd, cTrail_d[vals[3]], cTrail_d[vals[2]], cTrail_d[vals[1]], cTrail_d[vals[0]]);
+#endif
 
 	Cl  = opCode(add_pd, opCode(mul_pd, m, vLg2ld), fc);
 	Ct  = opCode(add_pd, opCode(mul_pd, m, vLg2td), i2);
@@ -210,7 +228,7 @@ inline _MData_	opCode(log_pd, _MData_ &x) {
 
 #ifndef	__INTEL_COMPILER
 
-inline _MData_	opCode(exp_ps, _MData_ &x) {
+inline _MData_	opCode(exp_ps, _MData_ x) {
 	_MInt_	N, M, n1, n2;
 #if	defined(__AVX512F__)
 	_MHnt_	Mh, Ml;
@@ -223,7 +241,7 @@ inline _MData_	opCode(exp_ps, _MData_ &x) {
 	1.  Filtra Nan
 	2.  Filtra +inf -> +inf
 	3.  Filtra -inf -> 0
-        4.  Filtra Threshold_1 -> +inf / 0
+        4.  Filtra Threshold_1 -> +inf / 0 --> En realidad es -175.0 por abajo, no lo que pone ahí, por el exponente M
 	5.  Filtra Threshold_2 -> 1+x	<-- No hace falta, porque vamos a calcular la chunga igual...
 */
 #if	defined(__AVX512F__)
@@ -288,35 +306,64 @@ inline _MData_	opCode(exp_ps, _MData_ &x) {
 //	Sl  = opCode(set_ps, sLead_f[vals[7]], sLead_f[vals[6]], sLead_f[vals[5]], sLead_f[vals[4]], sLead_f[vals[3]], sLead_f[vals[2]], sLead_f[vals[1]], sLead_f[vals[0]]);
 //	St  = opCode(set_ps, sTrail_f[vals[7]], sTrail_f[vals[6]], sTrail_f[vals[5]], sTrail_f[vals[4]], sTrail_f[vals[3]], sTrail_f[vals[2]], sTrail_f[vals[1]], sTrail_f[vals[0]]);
 //#endif
+#if	defined(__AVX512F__)
+	Sl  = opCode(i32gather_ps, n2, sLead_f.data(),  4);
+	St  = opCode(i32gather_ps, n2, sTrail_f.data(), 4);
+#elif	defined(__AVX2__)
 	Sl  = opCode(i32gather_ps, sLead_f.data(),  n2, 4);
 	St  = opCode(i32gather_ps, sTrail_f.data(), n2, 4);
-
+#else
+	int vals[8];
+	opCode(store_si256, static_cast<__m256i*>(static_cast<void*>(vals)), n2);
+	Sl  = opCode(set_ps, sLead_f[vals[7]], sLead_f[vals[6]], sLead_f[vals[5]], sLead_f[vals[4]], sLead_f[vals[3]], sLead_f[vals[2]], sLead_f[vals[1]], sLead_f[vals[0]]);
+	St  = opCode(set_ps, sTrail_f[vals[7]], sTrail_f[vals[6]], sTrail_f[vals[5]], sTrail_f[vals[4]], sTrail_f[vals[3]], sTrail_f[vals[2]], sTrail_f[vals[1]], sTrail_f[vals[0]]);
+#endif
 	S   = opCode(add_ps, Sl, St);
-
 #if	defined(__AVX512F__)
-	Ml  = opCode(extracti64x4_epi64, M,  0b00);
-	Mh  = opCode(extracti64x4_epi64, M,  0b01);
+	Ml = opCode(extracti64x4_epi64, M,  0b00);
+	Mh = opCode(extracti64x4_epi64, M,  0b01);
+
+	auto msk = opCode(cmp_epi32_mask, opCode(set1_epi32, -126), M, _MM_CMPINT_NLE);
+
+	M  = opCode(mask_add_epi32, M, msk, M, opCode(set1_epi32, 126));
 	R2 = opCode(castsi512_ps, opCode(slli_epi32, opCode(and_si512, opCode(set1_epi32, 255),
 			opCode(inserti64x4, opCode(inserti64x4, opCode(setzero_si512),
 				opCodl(add_epi8, Mh, opCodl(set1_epi32, 127)), 0b01),
 				opCodl(add_epi8, Ml, opCodl(set1_epi32, 127)), 0b00)), 23));
 #elif	defined(__AVX2__)
+	N  = opCode(cmpgt_epi32, opCode(set1_epi32, -126), M);
+	M  = opCode(add_epi32, opCode(and_si256, N, opCode(set1_epi32, 126)), M);
 	R2 = opCode(castsi256_ps, opCode(slli_epi32, opCode(and_si256, opCode(add_epi8, M, opCode(set1_epi32, 127)), opCode(set1_epi32, 255)), 23));
 #elif	defined(__AVX__)
-	Ml  = opCode(extractf128_si256, M,  0b0000);
-	Mh  = opCode(extractf128_si256, M,  0b0001);
+	Ml = opCode(extractf128_si256, M,  0b0000);
+	Mh = opCode(extractf128_si256, M,  0b0001);
+
+	n1l = opCodl(cmpgt_epi32, opCodl(set1_epi32, -126), Ml); 
+	n1h = opCodl(cmpgt_epi32, opCodl(set1_epi32, -126), Mh);
+	N   = opCode(insertf128_si256, opCode(insertf128_si256, opCode(setzero_si256), n1l, 0b00), n1h, 0b01);	
+
+	Ml  = opCodl(add_epi32, opCodl(and_si128, n1l, opCodl(set1_epi32, 126)), Ml);
+	Mh  = opCodl(add_epi32, opCodl(and_si128, n1h, opCodl(set1_epi32, 126)), Mh);
+
 	R2 = opCode(castsi256_ps, opCode(insertf128_si256, opCode(insertf128_si256, opCode(setzero_si256),
 			opCodl(slli_epi32, opCodl(and_si128, opCodl(add_epi8, Mh, opCodl(set1_epi32, 127)), opCodl(set1_epi32, 255)), 23), 0b0001),
 			opCodl(slli_epi32, opCodl(and_si128, opCodl(add_epi8, Ml, opCodl(set1_epi32, 127)), opCodl(set1_epi32, 255)), 23), 0b0000));
 #endif
 	R1 = opCode(add_ps, Sl, opCode(add_ps, St, opCode(mul_ps, S, Q)));
-	return	opCode(mul_ps, R2, R1);
-
+#if	defined(__AVX512F__)
+	R  = opCode(mask_blend_ps, msk, opCode(set1_ps, 1.0f), vExpf);
+	return	opCode(mask_blend_ps, opCode(cmp_ps_mask, x, opCode(set1_ps, -175.0f), _CMP_GE_OQ),
+			opCode(mul_ps, R, opCode(mul_ps, R2, R1)),
+			opCode(setzero_ps));
+#else
+	R  = opCode(blendv_ps, opCode(set1_ps, 1.0f), vExpf, opCode(castsi256_ps, N));
+	return	opCode(and_ps, opCode(mul_ps, R, opCode(mul_ps, R2, R1)), opCode(cmp_ps, x, opCode(set1_ps, -175.0f), _CMP_NLT_UQ));
+#endif
 }
 
 #endif
 
-inline _MData_	opCode(log_ps, _MData_ &x) {
+inline _MData_	opCode(log_ps, _MData_ x) {
 
 	/*	1. Filtra negativos	*
 	 *	2. Filtra Nan		*/
@@ -370,9 +417,18 @@ inline _MData_	opCode(log_ps, _MData_ &x) {
 	F  = opCode(mul_ps, vi2t7f, i2);
 	f  = opCode(sub_ps, Y, F);
 
+#if	defined(__AVX512F__)
+	fc  = opCode(i32gather_ps, j, cLead_f.data(),  4);
+	i2  = opCode(i32gather_ps, j, cTrail_f.data(), 4);
+#elif	defined(__AVX2__)
 	fc  = opCode(i32gather_ps, cLead_f.data(),  j, 4);
 	i2  = opCode(i32gather_ps, cTrail_f.data(), j, 4);
-
+#else
+	int vals[8];
+	opCode(store_si256, static_cast<__m256i*>(static_cast<void*>(vals)), j);
+	fc  = opCode(set_ps, cLead_f[vals[7]],  cLead_f[vals[6]],  cLead_f[vals[5]],  cLead_f[vals[4]],  cLead_f[vals[3]],  cLead_f[vals[2]],  cLead_f[vals[1]],  cLead_f[vals[0]]);
+	i2  = opCode(set_ps, cTrail_f[vals[7]], cTrail_f[vals[6]], cTrail_f[vals[5]], cTrail_f[vals[4]], cTrail_f[vals[3]], cTrail_f[vals[2]], cTrail_f[vals[1]], cTrail_f[vals[0]]);
+#endif
 	Cl  = opCode(add_ps, opCode(mul_ps, m, vLg2lf), fc);
 	Ct  = opCode(add_ps, opCode(mul_ps, m, vLg2tf), i2);
 

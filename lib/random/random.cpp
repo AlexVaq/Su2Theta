@@ -26,6 +26,8 @@ namespace	Su2Rand {
 	}
 
 	double	genRand () { return (*myRNG)(); }
+	double	max     () { return (*myRNG).Max(); }
+	double	min     () { return (*myRNG).Min(); }
 
 //	template<class T>
 //	T	genVRand() {
@@ -41,5 +43,16 @@ namespace	Su2Rand {
 			in[i] = genRand();
 
 		return	Simd::Simd_f(in);
+	}
+
+	template<>
+	Simd::Simd_d	genVRand<Simd::Simd_d>() {
+		double in[Simd::Simd_d::nData];
+
+		#pragma unroll
+		for (int i=0; i<Simd::Simd_d::nData; i++)
+			in[i] = genRand();
+
+		return	Simd::Simd_d(in);
 	}
 }
