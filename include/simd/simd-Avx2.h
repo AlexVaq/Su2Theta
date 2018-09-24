@@ -59,7 +59,7 @@
 			}
 
 			inline	Mask_f	 operator! () {
-				return	opCode(castps_si256, opCode(xor_ps, opCode(castsi256_ps, this->data), opCode(castsi256_ps, opCode(set1_epi32, 0xffffffff))));
+				return	opCode(castps_si256, opCode(andnot_ps, opCode(castsi256_ps, this->data), opCode(castsi256_ps, opCode(set1_epi32, 0xffffffff))));
 			}
 
 			inline	int	Count() {
@@ -129,12 +129,24 @@
 				data = std::move(in);
 			}
 
-			void	save  (float *memAddress) {
-				opCode(store_ps,  memAddress, this->data);
+			void	Load  (float * __restrict__ memAddress) {
+				float * __restrict__ mAddr = (float * __restrict__) __builtin_assume_aligned (memAddress, Simd::sAlign);
+				data = opCode(load_ps, mAddr);
 			}
 
-			void	stream (float *memAddress) {
-				opCode(stream_ps, memAddress, this->data);
+			void	Save  (float * __restrict__ memAddress) {
+				float * __restrict__ mAddr = (float * __restrict__) __builtin_assume_aligned (memAddress, Simd::sAlign);
+				opCode(store_ps,  mAddr, this->data);
+			}
+
+			void	SaveMask(Mask_f msk, float * __restrict__ memAddress) {
+				float * __restrict__ mAddr = (float * __restrict__) __builtin_assume_aligned (memAddress, Simd::sAlign);
+				opCode(maskstore_ps, mAddr, msk.data, this->data);
+			}
+
+			void	Stream (float *memAddress) {
+				float * __restrict__ mAddr = (float * __restrict__) __builtin_assume_aligned (memAddress, Simd::sAlign);
+				opCode(stream_ps, mAddr, this->data);
 			}
 
 			inline	Simd_f	operator+(const Simd_f &x) {
@@ -153,22 +165,22 @@
 				return	opCode(div_ps, this->data, x.data);
 			}
 
-			inline	Simd_f &operator+=(const Simd_f &x) {
+			inline	Simd_f	&operator+=(const Simd_f &x) {
 				(*this) = (*this)+x;
 				return	(*this);
 			}
 
-			inline	Simd_f &operator-=(const Simd_f &x) {
+			inline	Simd_f	&operator-=(const Simd_f &x) {
 				(*this) = (*this)-x;
 				return	(*this);
 			}
 
-			inline	Simd_f &operator*=(const Simd_f &x) {
+			inline	Simd_f	&operator*=(const Simd_f &x) {
 				(*this) = (*this)*x;
 				return	(*this);
 			}
 
-			inline	Simd_f &operator/=(const Simd_f &x) {
+			inline	Simd_f	&operator/=(const Simd_f &x) {
 				(*this) = (*this)/x;
 				return	(*this);
 			}
@@ -313,7 +325,7 @@
 			}
 
 			inline	Mask_d	 operator! () {
-				return	opCode(castpd_si256, opCode(xor_pd, opCode(castsi256_pd, this->data), opCode(castsi256_pd, opCode(set1_epi32, 0xffffffff))));
+				return	opCode(castpd_si256, opCode(andnot_pd, opCode(castsi256_pd, this->data), opCode(castsi256_pd, opCode(set1_epi32, 0xffffffff))));
 			}
 
 			inline	int	Count() {
@@ -330,7 +342,7 @@
 			}
 
 			void	Print(const char *str)	{
-				printiVar(this->data, str);
+				printlVar(this->data, str);
 			}
 
 			friend	class	Simd_d;
@@ -379,11 +391,19 @@
 				data = std::move(in);
 			}
 
-			void	save  (double *memAddress) {
+			void	Load  (double *memAddress) {
+				data = opCode(load_pd, memAddress);
+			}
+
+			void	SaveMask(Mask_d msk, double *memAddress) {
+				opCode(maskstore_pd, memAddress, msk.data, this->data);
+			}
+
+			void	Save  (double *memAddress) {
 				opCode(store_pd,  memAddress, this->data);
 			}
 
-			void	stream (double *memAddress) {
+			void	Stream (double *memAddress) {
 				opCode(stream_pd, memAddress, this->data);
 			}
 
@@ -403,22 +423,22 @@
 				return	opCode(div_pd, this->data, x.data);
 			}
 
-			inline	Simd_d &operator+=(const Simd_d &x) {
+			inline	Simd_d	&operator+=(const Simd_d &x) {
 				(*this) = (*this)+x;
 				return	(*this);
 			}
 
-			inline	Simd_d &operator-=(const Simd_d &x) {
+			inline	Simd_d	&operator-=(const Simd_d &x) {
 				(*this) = (*this)-x;
 				return	(*this);
 			}
 
-			inline	Simd_d &operator*=(const Simd_d &x) {
+			inline	Simd_d	&operator*=(const Simd_d &x) {
 				(*this) = (*this)*x;
 				return	(*this);
 			}
 
-			inline	Simd_d &operator/=(const Simd_d &x) {
+			inline	Simd_d	&operator/=(const Simd_d &x) {
 				(*this) = (*this)/x;
 				return	(*this);
 			}

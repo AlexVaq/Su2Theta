@@ -2,119 +2,227 @@
 	#define	__SU2_BASE_ACTION
 
 	#include <enumFields.h>
+	#include <utils/utils.h>
 	#include <lattice/lattice.h>
 
 	namespace Su2Action {
 
-		constexpr double cfWilson   = 0.5/6;
-		constexpr double cfImproved = 0.;
+		constexpr double cfWilson   =  0.5;
+		constexpr double cfImproved = -0.025;
 
-		template<class T>
-		class	Action {
+		template<class T, ColorKind cOrd>
+		class	Action  : public Tunable {
 			private:
 
 			double	beta;
 			double	theta;
 
-			const bool impAction;
-
-			Lattice<T> &lat;
+			Lattice<T, cOrd> &lat;
 
 			public:
 
-				Action (Lattice<T> &lat, double beta, double theta, bool imp) : lat(lat), beta(beta), theta(theta), impAction(imp) {};
+			typedef T Data;
 
-			double		Beta () { return beta;  }
-			double		Theta() { return theta; }
-			Lattice<T>&	Latt()  { return lat; }
+				Action (Lattice<T, cOrd> &lat, double beta, double theta) : lat(lat), beta(beta), theta(theta) {
+				InitBlockSize(lat.vLength());
+				std::string sName = std::to_string(T::sWide) + std::string(" ") + std::to_string(lat.SLength()) + std::string("x") + std::to_string(lat.TLength());
+				if (cOrd == Su2Enum::EvenOdd)
+					SetName(std::string("Action EO\t")  + sName);
+				else
+					SetName(std::string("Action P32\t") + sName);
+			};
+
+			inline	double		Beta () { return beta;  }
+			inline	double		Theta() { return theta; }
+			inline	Lattice<T,cOrd>&Latt()  { return lat; }
+
+			inline	constexpr ColorKind	ParityLevel() const { return cOrd; }
 
 			// Con beta
-			double	operator()() {
-				return	allPts()*beta;
-			}
+//			double	operator()() {
+//				return	allPts()*beta;
+//			}
 
-			inline double	operator()(size_t mPt) {
-				return	(*this)[mPt]*beta;
-			}
+//			inline	double	operator()(size_t mPt) {
+//				return	(*this)[mPt]*beta;
+//			}
 
 			// Sin beta
-			inline double	allPts() {
+			inline	double	allPts() {
+				Su2Prof::Profiler &prof = Su2Prof::getProfiler(ProfAction);
+				prof.start();
+
 				double	total = 0.;
 
 				// Divide into blocks
-				#pragma omp parallel for reduction(+:total) schedule(static)
-				for (size_t i=0; i<lat.Volume(); i++)
-					total += (*this)[i];
+#ifdef	__INTEL_COMPILER
+				const int Bt  = BlockT();
+				const int Bz  = BlockZ();
+				const int By  = BlockY();
+				const int Bx  = BlockX();
+#else
+				#define	Bt	BlockT()
+				#define	Bz	BlockZ()
+				#define	By	BlockY()
+				#define	Bx	BlockX()
+#endif
+				const int nBt = Latt().vtLength()/BlockT();
+				const int nBz = Latt().vzLength()/BlockZ();
+				const int nBy = Latt().vyLength()/BlockY();
+				const int nBx = Latt().vxLength()/BlockX();
+
+				for (int bt=0; bt<nBt; bt++)
+				  for (int bz=0; bz<nBz; bz++)
+				    for (int by=0; by<nBy; by++)
+				      for (int bx=0; bx<nBx; bx++) {
+					double partial = 0.;
+
+					#pragma omp parallel for reduction(+:partial) collapse(4) schedule(static)
+					for (uint ct=0; ct<Bt; ct++) {
+					  for (uint cz=0; cz<Bz; cz++) {
+					    for (uint cy=0; cy<By; cy++) {
+					      for (uint cx=0; cx<Bx; cx++) {
+						auto iPt = Coord<cOrd>(cx + BlockX()*bx, cy + BlockY()*by, cz + BlockZ()*bz, ct + BlockT()*bt);
+						partial += (*this)(iPt);
+					      }
+					    }
+					  }
+					}
+					total += partial;
+				      }
+#ifndef	__INTEL_COMPILER
+				#undef	Bt
+				#undef	Bz
+				#undef	By
+				#undef	Bx
+#endif
+				prof.stop();
+				double myGFlops = (cOrd == Colored ? 2197.0 : 517.0) * Latt().Volume() * 1e-9;
+				double myGBytes = (cOrd == Colored ?   96.0 :  24.0) * Latt().oVol()   * sizeof(T) / 1073741824.0;
+				add(myGFlops, myGBytes); 
+				prof.add(Name(), myGFlops, myGBytes);
+
+				LogMsg  (VerbHigh, "%s reporting %lf GFlops %lf GBytes", Name().c_str(), prof.Prof()[Name()].GFlops(), prof.Prof()[Name()].GBytes());
 
 				return	total;
 			}
 
-			inline T	operator()(size_t mPt, int mu) {
+			inline	T	operator()(size_t mPt, int mu) {
+				return (*this)(Coord<cOrd>(mPt, lat.vLength()), mu);
+			}
+
+			inline	T	operator()(Coord<cOrd> mPt, int mu) {
 
 				T	staple(0.), iSp(0.);
 
 				for (int dir=mu+1; dir<mu+4; dir++) {
+					Coord<cOrd> pPt, qPt;
 					int nu = dir%4;
 
 					auto nPt = lat.nextPoint(mPt, mu);
 					auto oPt = lat.nextPoint(mPt, nu);
+					auto mIx = mPt.IdxPt(lat.vLength());
+					auto nIx = nPt.IdxPt(lat.vLength());
+					auto oIx = oPt.IdxPt(lat.vLength());
+					auto pIx = oIx;
+					auto qIx = oIx;
 
-					auto tmp = lat.Data(nPt, nu);
-					tmp *= !lat.Data(oPt, mu);
-					tmp *= !lat.Data(mPt, nu);
-
-					staple += tmp;
-
-					auto pPt = lat.nextPoint(mPt, (nu+4));
-					auto qPt = lat.nextPoint(nPt, (nu+4));
-
-					tmp  = !lat.Data(qPt, nu);
-					tmp *= !lat.Data(pPt, mu);
-					tmp *=  lat.Data(pPt, nu);
+					auto tmp = lat.Data(nIx, nu);
+					tmp *= !lat.Data(oIx, mu);
+					tmp *= !lat.Data(mIx, nu);
 
 					staple += tmp;
-				}
 
-				if (impAction) {
-					for (int mu=0; mu<3; mu++) {
-						for (int nu=mu+1; nu<4; nu++) {
-							auto nPt = lat.nextPoint(mPt, mu);
-							auto oPt = lat.nextPoint(nPt, mu);
-							auto qPt = lat.nextPoint(mPt, nu);
-							auto pPt = lat.nextPoint(nPt, nu);
+					if (cOrd == Su2Enum::Colored) {
+						qPt = lat.nextPoint(nPt, mu);
+						pPt = lat.nextPoint(nPt, nu);
+						pIx = pPt.IdxPt(lat.vLength());
 
-							auto tmp = lat.Data(mPt, mu);
-							tmp *= lat.Data(nPt, mu);
-							tmp *= lat.Data(oPt, nu);
-							tmp *= !lat.Data(pPt, mu);
-							tmp *= !lat.Data(qPt, mu);
-							tmp *= !lat.Data(mPt, nu);
+						tmp  =  lat.Data(nIx, mu);
+						tmp *=  lat.Data(qPt, nu);
+						tmp *= !lat.Data(pIx, mu);
+						tmp *= !lat.Data(oIx, mu);
+						tmp *= !lat.Data(mIx, nu);
 
-							iSp += tmp;
+						iSp += tmp;
 
-							oPt  = lat.nextPoint(nPt, nu);
-							pPt  = lat.nextPoint(qPt, nu);
+						qPt  =  lat.nextPoint(oPt, nu);
 
-							tmp  = lat.Data(mPt, mu);
-							tmp *= lat.Data(nPt, nu);
-							tmp *= lat.Data(oPt, nu);
-							tmp *= !lat.Data(pPt, mu);
-							tmp *= !lat.Data(qPt, nu);
-							tmp *= !lat.Data(mPt, nu);
+						tmp  =  lat.Data(nIx, nu);
+						tmp *=  lat.Data(pIx, nu);
+						tmp *= !lat.Data(qPt, mu);
+						tmp *= !lat.Data(oIx, nu);
+						tmp *= !lat.Data(mIx, nu);
 
-							iSp += tmp;
-						}
+						iSp += tmp;
+
+						qPt = lat.nextPoint(oPt, mu+4);
+						pPt = lat.nextPoint(mPt, mu+4);
+						qIx = qPt.IdxPt(lat.vLength());
+						pIx = pPt.IdxPt(lat.vLength());
+
+						tmp  =  lat.Data(nIx, nu);
+						tmp *= !lat.Data(oIx, mu);
+						tmp *= !lat.Data(qPt, mu);
+						tmp *= !lat.Data(pIx, nu);
+						tmp *=  lat.Data(pIx, mu);
+
+						iSp += tmp;
 					}
 
-					staple += iSp*(cfImproved/cfWilson);
+					// Opposite direction
+					auto rPt = lat.nextPoint(mPt, (nu+4));
+					oPt = lat.nextPoint(nPt, (nu+4));
+					qPt = lat.nextPoint(rPt, (mu+4));
+					auto rIx = rPt.IdxPt(lat.vLength());
+					oIx = oPt.IdxPt(lat.vLength());
+					qIx = qPt.IdxPt(lat.vLength());
+
+					tmp  = !lat.Data(oIx, nu);
+					tmp *= !lat.Data(rIx, mu);
+					tmp *=  lat.Data(rIx, nu);
+
+					staple += tmp;
+
+					if (cOrd == Su2Enum::Colored) {
+						tmp  = !lat.Data(oIx, nu);
+						tmp *= !lat.Data(rIx, mu);
+						tmp *= !lat.Data(qIx, mu);
+						tmp *=  lat.Data(qIx, nu);
+						tmp *=  lat.Data(pIx, mu);
+
+						iSp += tmp;
+
+						pPt = lat.nextPoint(oPt, nu+4);
+						qPt = lat.nextPoint(rPt, nu+4);
+						qIx = qPt.IdxPt(lat.vLength());
+
+						tmp  = !lat.Data(oIx, nu);
+						tmp *= !lat.Data(pPt, nu);
+						tmp *= !lat.Data(qIx, mu);
+						tmp *=  lat.Data(qIx, nu);
+						tmp *=  lat.Data(rIx, nu);
+
+						iSp += tmp;
+
+						qPt = lat.nextPoint(oPt, mu);
+
+						tmp  =  lat.Data(nIx, mu);
+						tmp *= !lat.Data(qPt, nu);
+						tmp *= !lat.Data(oIx, mu);
+						tmp *= !lat.Data(rIx, mu);
+						tmp *=  lat.Data(rIx, nu);
+
+						iSp += tmp;
+					}
 				}
 
-				return	staple;
+				return	(staple + iSp*(cfImproved/cfWilson));
 			}
 
-			inline double	operator[](size_t mPt) {
+			inline double	operator()(Coord<cOrd> mPt) {
 
-				double	ret = 0.;
+				double	ret = 0., iRt = 0.;
 				T	tmp;
 
 				for (int mu=0; mu<3; mu++) {
@@ -122,56 +230,59 @@
 						auto nPt = lat.nextPoint(mPt, mu);
 						auto oPt = lat.nextPoint(mPt, nu);
 
-						tmp  =  lat.Data(mPt, mu);
-						tmp *=  lat.Data(nPt, nu);
-						tmp *= !lat.Data(oPt, mu);
-						tmp *= !lat.Data(mPt, nu);
+						auto mIx = mPt.IdxPt(lat.vLength());
+						auto nIx = nPt.IdxPt(lat.vLength());
+						auto oIx = oPt.IdxPt(lat.vLength());
+
+						tmp  =  lat.Data(mIx, mu);
+						tmp *=  lat.Data(nIx, nu);
+						tmp *= !lat.Data(oIx, mu);
+						tmp *= !lat.Data(mIx, nu);
 
 						ret += tmp.SuperTrace();
-					}
-				}
 
-				ret *= cfWilson;
+						if (cOrd == Su2Enum::Colored) {
+							auto pPt = lat.nextPoint(nPt, mu);
+							auto qPt = lat.nextPoint(nPt, nu);
+							auto rPt = lat.nextPoint(oPt, nu);
 
-				if (impAction) {
-					double	iRt = 0.;
+							auto qIx = qPt.IdxPt(lat.vLength());
 
-					for (int mu=0; mu<3; mu++) {
-						for (int nu=mu+1; nu<4; nu++) {
-							auto nPt = lat.nextPoint(mPt, mu);
-							auto oPt = lat.nextPoint(nPt, mu);
-							auto qPt = lat.nextPoint(mPt, nu);
-							auto pPt = lat.nextPoint(nPt, nu);
-
-							tmp  =  lat.Data(mPt, mu);
-							tmp *=  lat.Data(nPt, mu);
-							tmp *=  lat.Data(oPt, nu);
-							tmp *= !lat.Data(pPt, mu);
-							tmp *= !lat.Data(qPt, mu);
-							tmp *= !lat.Data(mPt, nu);
+							tmp  =  lat.Data(mIx, mu);
+							tmp *=  lat.Data(nIx, mu);
+							tmp *=  lat.Data(pPt, nu);
+							tmp *= !lat.Data(qIx, mu);
+							tmp *= !lat.Data(oIx, mu);
+							tmp *= !lat.Data(mIx, nu);
 
 							iRt += tmp.SuperTrace();
 
-							oPt  = lat.nextPoint(nPt, nu);
-							pPt  = lat.nextPoint(qPt, nu);
-
-							tmp  =  lat.Data(mPt, mu);
-							tmp *=  lat.Data(nPt, nu);
-							tmp *=  lat.Data(oPt, nu);
-							tmp *= !lat.Data(pPt, mu);
-							tmp *= !lat.Data(qPt, nu);
-							tmp *= !lat.Data(mPt, nu);
+							tmp  =  lat.Data(mIx, mu);
+							tmp *=  lat.Data(nIx, nu);
+							tmp *=  lat.Data(qIx, nu);
+							tmp *= !lat.Data(rPt, mu);
+							tmp *= !lat.Data(oIx, nu);
+							tmp *= !lat.Data(mIx, nu);
 
 							iRt += tmp.SuperTrace();
 						}
 					}
-
-					ret += iRt*cfImproved;
 				}
 
-				return	ret;
+				return	(ret*cfWilson + iRt*cfImproved);
 			}
+
+			inline double	operator()(size_t mPt) {
+				return	(*this)(Coord<cOrd>(mPt, lat.vLength()));
+
+			}
+
+			void	SaveState()	override	{}
+			void	RestoreState()	override	{}
+			inline	void	Run()	override	{ (*this).allPts(); }
+			inline void	Reset()	override	{ Su2Prof::getProfiler(ProfAction).reset(Name()); }
 		};
+
 	}
 #endif
 

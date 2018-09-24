@@ -37,7 +37,7 @@
 				std::random_device seed;			// Totally random seed coming from memory garbage
 
 				for (int i=0; i<Su2Comms::nThreads; i++)
-					sd[i] = seed()*(1 + Su2Comms::rank);
+					sd[i] = i;//seed()*(1 + Su2Comms::rank);
 
 				#pragma omp parallel default(shared)
 				{
@@ -64,14 +64,23 @@
 				}
 			}
 
-
 			Float	operator()() {
 				int nThread = omp_get_thread_num();
 				return	uni(mt64[nThread]);
 			}
+
+			double	Min() {
+				return	uni.min();
+			}
+
+			double	Max() {
+				return	uni.max();
+			}
 		};
 
 		double	genRand	();
+		double	max	();
+		double	min	();
 
 		template<class T>
 		T	genVRand();

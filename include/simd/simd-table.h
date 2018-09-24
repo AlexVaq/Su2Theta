@@ -480,6 +480,28 @@ constexpr _MInt_  iSgnAbsd  = {       iSgAd,       iSgAd };
 constexpr _MInt_  iFillMsk  = {       iFlMk,       iFlMk };
 #endif
 
+#endif
+
+inline void printlVar(_MInt_ d, const char *name)
+{
+	printf ("%s", name);
+#if	defined(__AVX512F__)
+	long long int r[8] __attribute((aligned(64)));
+	opCode(store_si512, ((_MInt_ *)r), d);
+	for (int i=0; i<8; i++)
+#elif	defined(__AVX__)
+	long long int r[4] __attribute((aligned(32)));
+	opCode(store_si256, ((_MInt_ *)r), d);
+	for (int i=0; i<4; i++)
+#else
+	long long int r[2] __attribute((aligned(16)));
+	opCode(store_si128, ((_MInt_ *)r), d);
+	for (int i=0; i<2; i++)
+#endif
+		printf(" %zd", r[i]);
+	printf("\n");
+}
+
 #ifdef	__AVX__
 inline void printhVar(_MHnt_ d, const char *name)
 #else
@@ -527,7 +549,7 @@ inline void printdVar(_MData_ d, const char *name) {
 #else
 	#define	_MData_ __m128
 #endif 
-#endif
+
 #ifndef	__INTEL_COMPILER
 
 constexpr float Inf_f = __builtin_inff();
@@ -917,6 +939,7 @@ constexpr std::array<double, 129> cLead_d  = { Cl000_d, Cl001_d, Cl002_d, Cl003_
 					       Cl105_d, Cl106_d, Cl107_d, Cl108_d, Cl109_d, Cl110_d, Cl111_d, Cl112_d, Cl113_d, Cl114_d, Cl115_d, Cl116_d, Cl117_d, Cl118_d, Cl119_d,
 					       Cl120_d, Cl121_d, Cl122_d, Cl123_d, Cl124_d, Cl125_d, Cl126_d, Cl127_d, Cl128_d };
 
+#endif
 
 /*	Sleef	*/
 inline void printiVar(_MInt_ d, const char *name) {
@@ -972,8 +995,6 @@ inline void printsVar(_MData_ d, const char *name) {
 		printf(" %f", d[i]);
 	printf("\n");
 }
-
-#endif
 
 #undef	_MData_
 #undef	_PREFIX

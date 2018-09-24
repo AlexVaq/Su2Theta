@@ -35,6 +35,16 @@ namespace	Su2Rand {
 //	}
 
 	template<>
+	float	genVRand<float>() {
+		return	(*myRNG)();
+	}
+
+	template<>
+	double	genVRand<double>() {
+		return	(*myRNG)();
+	}
+
+	template<>
 	Simd::Simd_f	genVRand<Simd::Simd_f>() {
 		float in[Simd::Simd_f::nData];
 

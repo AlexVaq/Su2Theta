@@ -31,7 +31,7 @@ typedef union ieee754_d {
 
 int	main (int argc, char *argv[]) {
 
-	constexpr size_t nIters = 12577218+1;//4294967296/128;
+	constexpr size_t nIters = 4294967296/64;
 	constexpr size_t pFreq  = 268435456/64;
 
 	initSu2 (argc, argv);
@@ -123,7 +123,7 @@ int	main (int argc, char *argv[]) {
 
 	stdElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
 
-	printf ("Standard took %lu nanoseconds\n", stdElapsed);
+	printf ("Std took %lu nanoseconds\n", stdElapsed);
 	printf ("Result: %f %f %f %f %f %f %f %f\n", testVar5[0], testVar5[1], testVar5[2],  testVar5[3],  testVar5[4],  testVar5[5],  testVar5[6],  testVar5[7]);
 #if	defined(__AVX512F__)
 	printf ("        %f %f %f %f %f %f %f %f\n", testVar5[8], testVar5[9], testVar5[10], testVar5[11], testVar5[12], testVar5[13], testVar5[14], testVar5[15]);
@@ -175,27 +175,31 @@ int	main (int argc, char *argv[]) {
 	}
 	printf ("Result: %f\n", x5);
 	printf ("Speedup\t\tx%.2lf\n", ((double) stdElapsed.count())/((double) avxElapsed.count()));
-	printf ("Class vs intrinsics\tx%.2lf\n", ((double) othElapsed.count())/((double) avxElapsed.count()));
+	printf ("Class vs intr\tx%.2lf\n", ((double) othElapsed.count())/((double) avxElapsed.count()));
 
-	printf("Logarithm test\n");
+	printf("\n\nLogarithm test\n\n");
+	printf("Single precision\n");
 
-	std::vector<_MData_> base(nIters);
-	std::vector<_MData_> news(nIters);
-	std::vector<_MData_> outs(nIters);
+	double rangeLowf  = 1e-43;	// Min 1.4e-45;
+	double rangeHighf = 3e+38;	// Max 3.4e+38;
+	double stepf	  = std::exp((std::log(rangeHighf) - std::log(rangeLowf))/((double) nIters));
+	double cValf	  = rangeLowf;
+
+	void  *insf;
+	void  *news;
+	std::vector<float> base(nIters);
+	posix_memalign(&insf, Simd::sAlign, nIters*sizeof(float));
+	posix_memalign(&news, Simd::sAlign, nIters*sizeof(float));
+
+	for (int i=0; i<nIters; i++) {
+		static_cast<float*>(insf)[i] = cValf;
+		cValf *= stepf;
+	}
 
 	start = std::chrono::high_resolution_clock::now();
 
-	for (size_t i=1; i<nIters; i++) {
-#if	defined(__AVX512F__)
-		base[i] = opCode(set_ps, std::log(((float) i)*7e-4f),   std::log(((float) i)*7e-5f),     std::log(((float) i)*0.25e-5f),  std::log(((float) i)*0.14e-6f),
-					 std::log(((float) i)*7e-4f),   std::log(((float) i)*7e-5f),     std::log(((float) i)*0.25e-5f),  std::log(((float) i)*0.14e-6f),
-					 std::log(((float) i)*0.1e-8f), std::log(((float) i)*0.49e-18f), std::log(((float) i)*0.34e-28f), std::log(((float) i)*0.98e-39f),
-					 std::log(((float) i)*0.1e-8f), std::log(((float) i)*0.49e-18f), std::log(((float) i)*0.34e-28f), std::log(((float) i)*0.98e-39f));
-#else
-		base[i] = opCode(set_ps, std::log(((float) i)*7e-4f), std::log(((float) i)*7e-5f), std::log(((float) i)*0.34e-28f), std::log(((float) i)*0.98e-39f),
-					 std::log(((float) i)*7e-4f), std::log(((float) i)*7e-5f), std::log(((float) i)*0.34e-28f), std::log(((float) i)*0.98e-39f));
-#endif
-	}
+	for (size_t i=0; i<nIters; i++)
+		base[i] = std::log(static_cast<float*>(insf)[i]);
 
 	stop  = std::chrono::high_resolution_clock::now();
 	stdElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
@@ -203,18 +207,8 @@ int	main (int argc, char *argv[]) {
 
 	start = std::chrono::high_resolution_clock::now();
 
-	for (size_t i=1; i<nIters; i++) {
-#if	defined(__AVX512F__)
-		_MData_ sVar = opCode(set_ps, ((float) i)*7e-4f,   ((float) i)*7e-5f,     ((float) i)*0.25e-5f,  ((float) i)*0.14e-6f,
-					      ((float) i)*7e-4f,   ((float) i)*7e-5f,     ((float) i)*0.25e-5f,  ((float) i)*0.14e-6f,
-					      ((float) i)*0.1e-8f, ((float) i)*0.49e-18f, ((float) i)*0.34e-28f, ((float) i)*0.98e-39f,
-					      ((float) i)*0.1e-8f, ((float) i)*0.49e-18f, ((float) i)*0.34e-28f, ((float) i)*0.98e-39f);
-#else
-		_MData_ sVar = opCode(set_ps, ((float) i)*7e-4f, ((float) i)*7e-5f, ((float) i)*0.34e-28f, ((float) i)*0.98e-39f,
-					      ((float) i)*7e-4f, ((float) i)*7e-5f, ((float) i)*0.34e-28f, ((float) i)*0.98e-39f);
-#endif
-		news[i] = opCode(log_ps, sVar);
-	}
+	for (size_t i=0; i<nIters; i+=Simd_f::nData)
+		opCode(store_ps, &(static_cast<float*>(news)[i]), opCode(log_ps, opCode(load_ps, &(static_cast<float*>(insf)[i]))));
 
 	stop  = std::chrono::high_resolution_clock::now();
 	avxElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
@@ -222,43 +216,54 @@ int	main (int argc, char *argv[]) {
 	printf ("Avx took %lu nanoseconds\n", avxElapsed); fflush(stdout);
 	printf ("Speedup\t\tx%.2lf\n", ((double) stdElapsed.count())/((double) avxElapsed.count()));
 
-	float	fMax = 0.f;
-	int	iMax = 0;
-	int	kMax = 0;
+	double	sMaxf = 0.f;
+	double	aMaxf = 0.f;
+	size_t	iaMax = 0;
+	size_t	isMax = 0;
 
-	for (size_t i=1; i<nIters; i++) {
-		outs[i] = opCode(div_ps, opCode(sub_ps, base[i], news[i]), base[i]);
-		for (int k=0; k<nSimd; k++)
-			if (std::abs(outs[i][k]) > fMax) {
-				fMax = std::abs(outs[i][k]);
-				iMax = i;
-				kMax = k;
-			}
+	for (size_t i=0; i<nIters; i++) {
+		double tLog = std::log((double) static_cast<float*>(insf)[i]);
+		double sTmp = std::abs((((double) static_cast<float*>(news)[i]) - tLog)/tLog);
+		double aTmp = std::abs((((double) base[i]) - tLog)/tLog);
+		if (sTmp > sMaxf) {
+			sMaxf = sTmp;
+			isMax = i;
+		}
+		if (aTmp > aMaxf) {
+			aMaxf = aTmp;
+			iaMax = i;
+		}
 	}
-	printf ("Max error (%d, %d) %.8e (M %.8e S %.8e)\n", iMax, kMax, fMax, news[iMax][kMax], base[iMax][kMax]); fflush(stdout);
+	printf ("Max Avx error %.9e @ %.9e C %.12le T %.12le\n", sMaxf, static_cast<float*>(insf)[isMax], static_cast<float*>(news)[isMax],
+								 std::log((double) static_cast<float*>(insf)[isMax]));
+	printf ("Max Std error %.9e @ %.9e C %.12le T %.12le\n", aMaxf, static_cast<float*>(insf)[iaMax], base[iaMax], std::log((double) static_cast<float*>(insf)[iaMax]));
+	printf ("Range [%.9e %.9e - %.9e %.9e] - %.9e\n\n", static_cast<float*>(insf)[0],        static_cast<float*>(insf)[1],
+							    static_cast<float*>(insf)[nIters-2], static_cast<float*>(insf)[nIters-1], stepf);
+       	fflush(stdout);
 
-#if	defined(__AVX512F__)
-	std::vector<__m512d> based(nIters);
-	std::vector<__m512d> newsd(nIters);
-	std::vector<__m512d> outsd(nIters);
-#else
-	std::vector<__m256d> based(nIters);
-	std::vector<__m256d> newsd(nIters);
-	std::vector<__m256d> outsd(nIters);
-#endif
+	printf("\nDouble precision\n");
+
+	void	*insd;
+	void	*newsd;
+	std::vector<double> based(nIters);
+	std::vector<double> outsd(nIters);
+	posix_memalign(&insd,  Simd::sAlign, nIters*sizeof(double));
+	posix_memalign(&newsd, Simd::sAlign, nIters*sizeof(double));
+
+	long double rangeLowd  = 2e-307;	// Min 4.9407e-324 but just in case
+	long double rangeHighd = 1e+308;	// Max 3.59e+308 but it won't take it --> Inf
+	long double stepd      = std::exp((std::log((long double) rangeHighd) - std::log((long double) rangeLowd))/((long double) nIters));
+	long double cVald      = rangeLowd;
+
+	for (int i=0; i<nIters; i++) {
+		static_cast<double*>(insd)[i] = (double) cVald;
+		cVald *= stepd;
+	}
 
 	start = std::chrono::high_resolution_clock::now();
 
-	for (int k=0; k<2; k++) {
-		for (size_t i=1; i<nIters; i++) {
-#if	defined(__AVX512F__)
-			based[i] = opCode(set_pd, std::log(((double) i)*7e-4),   std::log(((double) i)*7e-5),     std::log(((double) i)*0.25e-5),  std::log(((double) i)*0.14e-6),
-						  std::log(((double) i)*0.1e-8), std::log(((double) i)*0.49e-18), std::log(((double) i)*0.34e-28), std::log(((double) i)*0.98e-39));
-#else
-			based[i] = opCode(set_pd, std::log(((double) i)*7e-4),   std::log(((double) i)*7e-5),     std::log(((double) i)*0.34e-28), std::log(((double) i)*0.98e-39));
-#endif
-		}
-	}
+	for (size_t i=0; i<nIters; i++)
+		base[i] = std::log(static_cast<double*>(insd)[i]);
 
 	stop  = std::chrono::high_resolution_clock::now();
 	stdElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
@@ -266,50 +271,41 @@ int	main (int argc, char *argv[]) {
 
 	start = std::chrono::high_resolution_clock::now();
 
-	for (int k=0; k<2; k++) {
-		for (size_t i=1; i<nIters; i++) {
-#if	defined(__AVX512F__)
-			__m512d dVar = opCode(set_pd, ((double) i)*7e-4,   ((double) i)*7e-5,     ((double) i)*0.25e-5,  ((double) i)*0.14e-6,
-						      ((double) i)*0.1e-8, ((double) i)*0.49e-18, ((double) i)*0.34e-28, ((double) i)*0.98e-39);
-#else
-			__m256d dVar = opCode(set_pd, ((double) i)*7e-4,   ((double) i)*7e-5,     ((double) i)*0.34e-28, ((double) i)*0.98e-39);
-#endif
-			newsd[i] = opCode(log_pd, dVar);
-		}
-	}
+	for (size_t i=0; i<nIters; i+=Simd_d::nData)
+		opCode(store_pd, &(static_cast<double*>(newsd)[i]), opCode(log_pd, opCode(load_pd, &(static_cast<double*>(insd)[i]))));
 
 	stop  = std::chrono::high_resolution_clock::now();
 	avxElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
 
 	printf ("Avx took %lu nanoseconds\n", avxElapsed); fflush(stdout);
 	printf ("Speedup\t\tx%.2lf\n", ((double) stdElapsed.count())/((double) avxElapsed.count()));
-	double	dMax = 0.0;
-	for (size_t i=1; i<nIters; i++) {
-		outsd[i] = opCode(div_pd, opCode(sub_pd, based[i], newsd[i]), based[i]);
-		for (int k=0; k<nSimd/2; k++)
-			if (std::abs(outs[i][k]) > dMax) {
-				dMax = std::abs(outsd[i][k]);
-				iMax = i;
-				kMax = k;
-			}
-	}
-	printf ("Max error %d %.16le (M %.16le S %.16le)\n", iMax, dMax, newsd[iMax][kMax], based[iMax][kMax]); fflush(stdout);
-
-	printf("Exponential test\n");
-
-	start = std::chrono::high_resolution_clock::now();
-
+	double	sMaxd = 0.0;
+	double	aMaxd = 0.0;
 	for (size_t i=0; i<nIters; i++) {
-#if	defined(__AVX512F__)
-		base[i] = opCode(set_ps, std::exp(((float) i)*7e-9f),     std::exp(((float) i)*7e-6f),       std::exp(((float) i)*0.25e-5f),     std::exp(((float) i)*0.14e-6f),
-					 std::exp(((float) i)*(-7e-9f)),  std::exp(((float) i)*(-7e-6f)),    std::exp(((float) i)*(-0.25e-5f)),  std::exp(((float) i)*(-0.14e-6f)),
-					 std::exp(((float) i)*0.1e-8f),   std::exp(((float) i)*0.49e-18f),   std::exp(((float) i)*0.34e-28f),    std::exp(((float) i)*0.98e-39f),
-					 std::exp(((float) i)*(-0.1e-8f)),std::exp(((float) i)*(-0.49e-18f)),std::exp(((float) i)*(-0.34e-28f)), std::exp(((float) i)*(-0.98e-39f)));
-#else
-		base[i] = opCode(set_ps, std::exp(((float) i)*(-7e-6f)),  std::exp(((float) i)*7e-6f),       std::exp(((float) i)*0.34e-28f),    std::exp(((float) i)*(-0.98e-39f)),
-					 std::exp(((float) i)*(-6e-9f)),  std::exp(((float) i)*6e-7f),       std::exp(((float) i)*(-0.24e-28f)), std::exp(((float) i)*0.88e-39f));
-#endif
+		long double tLog = std::log(  (long double) (static_cast<double*>(insd)[i]));
+		long double sTmp = std::abs((((long double) (static_cast<double*>(newsd)[i])) - tLog)/tLog);
+		long double aTmp = std::abs((((long double) (based[i])) - tLog)/tLog);
+		if (sTmp > sMaxd) {
+			sMaxd = sTmp;
+			isMax = i;
+		}
+		if (aTmp > aMaxd) {
+			aMaxd = aTmp;
+			iaMax = i;
+		}
 	}
+	printf ("Max Avx error %.12le @ %.12le C %.12le T %.16Le\n", sMaxd, static_cast<double*>(insd)[isMax], static_cast<double*>(newsd)[isMax],
+								     std::log((long double) (static_cast<double*>(insd)[isMax])));
+	printf ("Max Std error %.12le @ %.12le C %.12le T %.16Le\n", aMaxd, static_cast<double*>(insd)[iaMax], based[iaMax], std::log((long double) (static_cast<double*>(insd)[iaMax])));
+	printf ("Range [%.12le %.12le - %.12le %.12le] - %.16Le\n\n", static_cast<double*>(insd)[0],        static_cast<double*>(insd)[1],
+								      static_cast<double*>(insd)[nIters-2], static_cast<double*>(insd)[nIters-1], stepd);
+       	fflush(stdout);
+
+	printf("\n\nExponential test\n\n");
+	printf("Single precision\n");
+
+	for (size_t i=0; i<nIters; i++)
+		base[i] = std::exp(static_cast<float*>(insf)[i]);
 
 	stop  = std::chrono::high_resolution_clock::now();
 	stdElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
@@ -317,54 +313,47 @@ int	main (int argc, char *argv[]) {
 
 	start = std::chrono::high_resolution_clock::now();
 
-	for (size_t i=0; i<nIters; i++) {
-#if	defined(__AVX512F__)
-		_MData_ sVar = opCode(set_ps, ((float) i)*7e-9f,     ((float) i)*7e-6f,       ((float) i)*0.25e-5f,    ((float) i)*0.14e-6f,
-					      ((float) i)*(-7e-9f),  ((float) i)*(-7e-6f),    ((float) i)*(-0.25e-5f), ((float) i)*(-0.14e-6f),
-					      ((float) i)*0.1e-8f,   ((float) i)*0.49e-18f,   ((float) i)*0.34e-28f,   ((float) i)*0.98e-39f,
-					      ((float) i)*(-0.1e-8f),((float) i)*(-0.49e-18f),((float) i)*(-0.34e-28f),((float) i)*(-0.98e-39f));
-#else
-		_MData_ sVar = opCode(set_ps, ((float) i)*(-7e-6f), ((float) i)*7e-6f, ((float) i)*0.34e-28f,    ((float) i)*(-0.98e-39f),
-					      ((float) i)*(-6e-9f), ((float) i)*6e-7f, ((float) i)*(-0.24e-28f), ((float) i)*0.88e-39f);
-#endif
-		news[i] = opCode(exp_ps, sVar);
-	}
+	for (size_t i=0; i<nIters; i+=Simd_f::nData)
+		opCode(store_ps, &(static_cast<float*>(news)[i]), opCode(exp_ps, opCode(load_ps, &(static_cast<float*>(insf)[i]))));
 
 	stop  = std::chrono::high_resolution_clock::now();
 	avxElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
 
 	printf ("Avx took %lu nanoseconds\n", avxElapsed); fflush(stdout);
 	printf ("Speedup\t\tx%.2lf\n", ((double) stdElapsed.count())/((double) avxElapsed.count()));
-	fMax = 0.f;
-	iMax = 0;
-	kMax = 0;
+
+	sMaxf = 0.f;
+	aMaxf = 0.f;
+
 	for (size_t i=0; i<nIters; i++) {
-	//	if ((i%1048576) != 0) {
-	//		printsVar(base[i], "base");
-	//		printsVar(news[i], "news");
-	//	}
-		outs[i] = opCode(div_ps, opCode(sub_ps, base[i], news[i]), base[i]);
-		for (int k=0; k<nSimd; k++)
-			if (std::abs(outs[i][k]) > fMax) {
-				fMax = std::abs(outs[i][k]);
-				iMax = i;
-				kMax = k;
-			}
-	}
-	printf ("Max error (%d, %d) %.8e (M %.8e S %.8e)\n", iMax, kMax, fMax, news[iMax][kMax], base[iMax][kMax]); fflush(stdout);
+		double tExp = std::exp((double) static_cast<float*>(insf)[i]);
 
-	start = std::chrono::high_resolution_clock::now();
+		if (tExp > rangeHighf)
+			continue;
 
-	for (int k=0; k<2; k++) {
-		for (size_t i=0; i<nIters; i++) {
-#if	defined(__AVX512F__)
-			based[i] = opCode(set_pd, std::exp(((double) i)*7e-7),   std::exp(((double) i)*7e-9),     std::exp(((double) i)*0.25e-5),  std::exp(((double) i)*0.14e-6),
-						  std::exp(((double) i)*0.1e-8), std::exp(((double) i)*0.49e-18), std::exp(((double) i)*0.34e-28), std::exp(((double) i)*0.98e-39));
-#else
-			based[i] = opCode(set_pd, std::exp(((double) i)*7e-7),   std::exp(((double) i)*7e-9),     std::exp(((double) i)*0.34e-28), std::exp(((double) i)*0.98e-39));
-#endif
+		double sTmp = std::abs((((double) static_cast<float*>(news)[i]) - tExp)/tExp);
+		double aTmp = std::abs((((double) base[i]) - tExp)/tExp);
+		if (sTmp > sMaxf) {
+			sMaxf = sTmp;
+			isMax = i;
+		}
+		if (aTmp > aMaxf) {
+			aMaxf = aTmp;
+			iaMax = i;
 		}
 	}
+	printf ("Max Avx error %.9e @ %.9e C %.12le T %.12le\n", sMaxf, static_cast<float*>(insf)[isMax], static_cast<float*>(news)[isMax],
+								 std::exp((double) static_cast<float*>(insf)[isMax]));
+	printf ("Max Std error %.9e @ %.9e C %.12le T %.12le\n", aMaxf, static_cast<float*>(insf)[iaMax], base[iaMax], std::exp((double) static_cast<float*>(insf)[iaMax]));
+	printf ("Range [%.9e %.9e - %.9e %.9e] - %.9e\n\n", static_cast<float*>(insf)[0],        static_cast<float*>(insf)[1],
+							    static_cast<float*>(insf)[nIters-2], static_cast<float*>(insf)[nIters-1], stepf);
+       	fflush(stdout);
+
+	for (size_t i=0; i<nIters; i++)
+		static_cast<float*>(insf)[i] *= (-1.0);
+
+	for (size_t i=0; i<nIters; i++)
+		base[i] = std::exp(static_cast<float*>(insf)[i]);
 
 	stop  = std::chrono::high_resolution_clock::now();
 	stdElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
@@ -372,40 +361,150 @@ int	main (int argc, char *argv[]) {
 
 	start = std::chrono::high_resolution_clock::now();
 
-	for (int k=0; k<2; k++) {
-		for (size_t i=0; i<nIters; i++) {
-#if	defined(__AVX512F__)
-			__m512d dVar = opCode(set_pd, ((double) i)*7e-7,   ((double) i)*7e-9,     ((double) i)*0.25e-5,  ((double) i)*0.14e-6,
-						      ((double) i)*0.1e-8, ((double) i)*0.49e-18, ((double) i)*0.34e-28, ((double) i)*0.98e-39);
-#else
-			__m256d dVar = opCode(set_pd, ((double) i)*7e-7,   ((double) i)*7e-9,     ((double) i)*0.34e-28, ((double) i)*0.98e-39);
-#endif
-			newsd[i] = opCode(exp_pd, dVar);
-		}
-	}
+	for (size_t i=0; i<nIters; i+=Simd_f::nData)
+		opCode(store_ps, &(static_cast<float*>(news)[i]), opCode(exp_ps, opCode(load_ps, &(static_cast<float*>(insf)[i]))));
 
 	stop  = std::chrono::high_resolution_clock::now();
 	avxElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
 
 	printf ("Avx took %lu nanoseconds\n", avxElapsed); fflush(stdout);
 	printf ("Speedup\t\tx%.2lf\n", ((double) stdElapsed.count())/((double) avxElapsed.count()));
-	dMax = 0.0;
+
+	sMaxf = 0.f;
+	aMaxf = 0.f;
+
 	for (size_t i=0; i<nIters; i++) {
-		outsd[i] = opCode(div_pd, opCode(sub_pd, based[i], newsd[i]), based[i]);
-		for (int k=0; k<nSimd/2; k++)
-			if (std::abs(outs[i][k]) > dMax) {
-				dMax = std::abs(outsd[i][k]);
-				iMax = i;
-				kMax = k;
-			}
+		double tExp = std::exp((double) static_cast<float*>(insf)[i]);
+		double sTmp = std::abs((((double) static_cast<float*>(news)[i]) - tExp)/tExp);
+		double aTmp = std::abs((((double) base[i]) - tExp)/tExp);
+
+		if (tExp < rangeLowf)
+			continue;
+
+		if (sTmp > sMaxf) {
+			sMaxf = sTmp;
+			isMax = i;
+		}
+		if (aTmp > aMaxf) {
+			aMaxf = aTmp;
+			iaMax = i;
+		}
 	}
-	printf ("Max error %d %.16le (M %.16le S %.16le)\n", iMax, dMax, newsd[iMax][kMax], based[iMax][kMax]); fflush(stdout);
+	printf ("Max Avx error %.9e @ %.9e C %.12le T %.12le\n", sMaxf, static_cast<float*>(insf)[isMax], static_cast<float*>(news)[isMax],
+								 std::exp((double) static_cast<float*>(insf)[isMax]));
+	printf ("Max Std error %.9e @ %.9e C %.12le T %.12le\n", aMaxf, static_cast<float*>(insf)[iaMax], base[iaMax], std::exp((double) static_cast<float*>(insf)[iaMax]));
+	printf ("Range [%.9e %.9e - %.9e %.9e] - %.9e\n\n", static_cast<float*>(insf)[0],        static_cast<float*>(insf)[1],
+							    static_cast<float*>(insf)[nIters-2], static_cast<float*>(insf)[nIters-1], stepf);
+       	fflush(stdout);
+
+	printf("\nDouble precision\n");
+
+	for (size_t i=0; i<nIters; i++)
+		based[i] = std::exp(static_cast<double*>(insd)[i]);
+
+	stop  = std::chrono::high_resolution_clock::now();
+	stdElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+	printf ("Std took %lu nanoseconds\n", stdElapsed); fflush(stdout);
+
+	start = std::chrono::high_resolution_clock::now();
+
+	for (size_t i=0; i<nIters; i+=Simd_d::nData)
+		opCode(store_pd, &(static_cast<double*>(newsd)[i]), opCode(exp_pd, opCode(load_pd, &(static_cast<double*>(insd)[i]))));
+
+	stop  = std::chrono::high_resolution_clock::now();
+	avxElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+
+	printf ("Avx took %lu nanoseconds\n", avxElapsed); fflush(stdout);
+	printf ("Speedup\t\tx%.2lf\n", ((double) stdElapsed.count())/((double) avxElapsed.count()));
+
+	sMaxd = 0.0;
+	aMaxd = 0.0;
+
+	for (size_t i=0; i<nIters; i++) {
+		long double tExp = std::exp((long double) (static_cast<double*>(insd)[i]));
+		long double sTmp = std::abs((((long double) (static_cast<double*>(newsd)[i])) - tExp)/tExp);
+		long double aTmp = std::abs((((long double) (based[i])) - tExp)/tExp);
+
+		if (tExp > rangeHighd)
+			continue;
+
+		if (sTmp > sMaxd) {
+			sMaxd = sTmp;
+			isMax = i;
+		}
+		if (aTmp > aMaxd) {
+			aMaxd = aTmp;
+			iaMax = i;
+		}
+	}
+	printf ("Max Avx error %.12le @ %.12le C %.12le T %.16Le\n", sMaxd, static_cast<double*>(insd)[isMax], static_cast<double*>(newsd)[isMax],
+								     std::exp((long double) (static_cast<double*>(insd)[isMax])));
+	printf ("Max Std error %.12le @ %.12le C %.12le T %.16Le\n", aMaxd, static_cast<double*>(insd)[iaMax], based[iaMax], std::exp((long double) (static_cast<double*>(insd)[iaMax])));
+	printf ("Range [%.12le %.12le - %.12le %.12le] - %.16Le\n\n", static_cast<double*>(insd)[0],        static_cast<double*>(insd)[1],
+								      static_cast<double*>(insd)[nIters-2], static_cast<double*>(insd)[nIters-1], stepd);
+       	fflush(stdout);
+
+	for (size_t i=0; i<nIters; i++)
+		static_cast<double*>(insd)[i] *= (-1.0);
+
+	for (size_t i=0; i<nIters; i++)
+		based[i] = std::exp(static_cast<double*>(insd)[i]);
+
+	stop  = std::chrono::high_resolution_clock::now();
+	stdElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+	printf ("Std took %lu nanoseconds\n", stdElapsed); fflush(stdout);
+
+	start = std::chrono::high_resolution_clock::now();
+
+	for (size_t i=0; i<nIters; i+=Simd_d::nData)
+		opCode(store_pd, &(static_cast<double*>(newsd)[i]), opCode(exp_pd, opCode(load_pd, &(static_cast<double*>(insd)[i]))));
+
+	stop  = std::chrono::high_resolution_clock::now();
+	avxElapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+
+	printf ("Avx took %lu nanoseconds\n", avxElapsed); fflush(stdout);
+	printf ("Speedup\t\tx%.2lf\n", ((double) stdElapsed.count())/((double) avxElapsed.count()));
+
+	sMaxd = 0.0;
+	aMaxd = 0.0;
+
+	for (size_t i=0; i<nIters; i++) {
+		long double tExp = std::exp(  (long double) (static_cast<double*>(insd)[i]));
+		long double sTmp = std::abs((((long double) (static_cast<double*>(newsd)[i])) - tExp)/tExp);
+		long double aTmp = std::abs((((long double) (based[i])) - tExp)/tExp);
+
+		if (tExp < rangeLowd)
+			continue;
+
+		if (sTmp > sMaxd) {
+			sMaxd = sTmp;
+			isMax = i;
+		}
+		if (aTmp > aMaxd) {
+			aMaxd = aTmp;
+			iaMax = i;
+		}
+	}
+
+	printf ("Max Avx error %.12le @ %.12le C %.12le T %.16Le\n", sMaxd, static_cast<double*>(insd)[isMax], static_cast<double*>(newsd)[isMax],
+								     std::exp((long double) (static_cast<double*>(insd)[isMax])));
+	printf ("Max Std error %.12le @ %.12le C %.12le T %.16Le\n", aMaxd, static_cast<double*>(insd)[iaMax], based[iaMax], std::exp((long double) (static_cast<double*>(insd)[iaMax])));
+	printf ("Range [%.12le %.12le - %.12le %.12le] - %.16Le\n\n", static_cast<double*>(insd)[0],        static_cast<double*>(insd)[1],
+								      static_cast<double*>(insd)[nIters-2], static_cast<double*>(insd)[nIters-1], stepd);
+       	fflush(stdout);
 
 	printf ("\nRandom number generator test\n"); fflush(stdout);
 	for (size_t i=0; i<16; i++) {
 		printsVar((genVRand<Simd_f>()).raw(), "Random");
 	}
-	(exp(Simd_f(-174.0f))).Print("Avx");
-	(exp(Simd_f(-175.0f))).Print("Avx");
-	(exp(Simd_f(-176.0f))).Print("Avx");
+
+	(exp(Simd_d(-700.0))).Print("-700");
+	(exp(Simd_d(-708.0))).Print("-708");
+	(exp(Simd_d(-708.4))).Print("-708.4");
+	(exp(Simd_d(-708.5))).Print("-708.5");
+	(exp(Simd_d(-710.0))).Print("-710.0");
+	(exp(Simd_d(-715.0))).Print("-715.0");
+
+	free(news); free(newsd);
+	free(insf); free(insd);
 }

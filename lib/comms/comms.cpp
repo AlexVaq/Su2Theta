@@ -6,6 +6,7 @@
 #include <climits>
 
 #include "enumFields.h"
+#include "comms/comms.h"
 #include "utils/memAlloc.h"
 #include "utils/logger.h"
 #include "utils/misc.h"
@@ -33,27 +34,26 @@ namespace	Su2Comms {
 		MPI_Barrier(MPI_COMM_WORLD);
 	}
 
-	int	initComms (int argc, char *argv[], int size, Device dev, LogMpi logMpi, VerbosityLevel verb)
+	int	initComms (int argc, char *argv[], int mySize, Device dev, LogMpi logMpi, VerbosityLevel verb)
 	{
 		int nAccs    = 0;
-		int realSize = 1;
 		int tProv;
 		char *allHosts;
+
+		size = 1;
 
 		MPI_Init_thread (&argc, &argv, MPI_THREAD_FUNNELED, &tProv);
 
 		if (tProv != MPI_THREAD_FUNNELED)
 			printf ("Error: Requested MPI_THREAD_FUNNELED could not be satisfied. Got %d\nOpenMP behavior undefined!!", tProv);
 
-		MPI_Comm_size (MPI_COMM_WORLD, &realSize);
+		MPI_Comm_size (MPI_COMM_WORLD, &size);
 
-		if (realSize != size) {
-			printf ("Error: Requested %d processes, got %d. Adjust you command line parameters\n", size, realSize);
+		if (mySize != size) {
+			printf ("Error: Requested %d processes, got %d. Adjust you command line parameters\n", mySize, size);
 			MPI_Finalize();
 			return -1;
 		}
-
-		size = realSize;
 
 		gethostname(hostname, HOST_NAME_MAX);
 		hostname[HOST_NAME_MAX-1] = '\0';		// gethostname no termina la cadena con \0

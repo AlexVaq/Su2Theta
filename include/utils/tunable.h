@@ -1,8 +1,9 @@
 #ifndef	_TUNABLE_
 	#define	_TUNABLE_
-	#include <comms/comms.h>
-	#include <utils/logger.h>
 	#include <string>
+	#include <utils/profiler.h>
+
+	using namespace Su2Prof;
 
 	class	Tunable {
 		protected:
@@ -15,59 +16,62 @@
 		unsigned int	xBlock;
 		unsigned int	yBlock;
 		unsigned int	zBlock;
+		unsigned int	tBlock;
 
 		unsigned int	xBest;
 		unsigned int	yBest;
 		unsigned int	zBest;
+		unsigned int	tBest;
 
 		unsigned int	xMax;
 		unsigned int	yMax;
 		unsigned int	zMax;
-
-		unsigned int	xSize;
-		unsigned int	ySize;
-		unsigned int	zSize;
+		unsigned int	tMax;
 
 		bool		isTuned;
 		bool		isGpu;
 
 		public:
 
-				Tunable() noexcept : gFlops(0.), gBytes(0.), xBlock(0), yBlock(0), zBlock(0), xBest(0), yBest(0), zBest(0),
-						     ySize(0), zSize(0), isTuned(false), isGpu(false), name("") {}
+				Tunable() noexcept : gFlops(0.), gBytes(0.), xBlock(0), yBlock(0), zBlock(0), tBlock(0), xBest(0), yBest(0), zBest(0), tBest(0),
+						     isTuned(false), isGpu(false), name("") {}
 
-		double		GFlops () const noexcept { return gFlops; }
-		double		GBytes () const noexcept { return gBytes; }
+		inline	double		GFlops () const noexcept { return gFlops; }
+		inline	double		GBytes () const noexcept { return gBytes; }
 
-		unsigned int	BlockX () const noexcept { return xBlock; }
-		unsigned int	BlockY () const noexcept { return yBlock; }
-		unsigned int	BlockZ () const noexcept { return zBlock; }
+		inline	unsigned int	BlockX () const noexcept { return xBlock; }
+		inline	unsigned int	BlockY () const noexcept { return yBlock; }
+		inline	unsigned int	BlockZ () const noexcept { return zBlock; }
+		inline	unsigned int	BlockT () const noexcept { return tBlock; }
 
-		bool		IsTuned() const noexcept { return isTuned;  }
-		void		UnTune ()       noexcept { isTuned = false; }
-		void		Tune   ()       noexcept { isTuned = true;  }
+		inline	bool		IsTuned() const noexcept { return isTuned;  }
+			void		UnTune ()       noexcept { isTuned = false; }
+			void		Tune   ()       noexcept { isTuned = true;  }
 
-		unsigned int	TunedBlockX () const noexcept { return xBest; }
-		unsigned int	TunedBlockY () const noexcept { return yBest; }
-		unsigned int	TunedBlockZ () const noexcept { return zBest; }
+		inline	unsigned int	TunedBlockX () const noexcept { return xBest; }
+		inline	unsigned int	TunedBlockY () const noexcept { return yBest; }
+		inline	unsigned int	TunedBlockZ () const noexcept { return zBest; }
+		inline	unsigned int	TunedBlockT () const noexcept { return tBest; }
 
-		unsigned int	MaxBlockX () const noexcept { return xMax; }
-		unsigned int	MaxBlockY () const noexcept { return yMax; }
-		unsigned int	MaxBlockZ () const noexcept { return zMax; }
+		inline	unsigned int	MaxBlockX () const noexcept { return xMax; }
+		inline	unsigned int	MaxBlockY () const noexcept { return yMax; }
+		inline	unsigned int	MaxBlockZ () const noexcept { return zMax; }
+		inline	unsigned int	MaxBlockT () const noexcept { return tMax; }
 
-		size_t		TotalThreads() const noexcept { return xBlock*yBlock*zBlock; }
+		inline	size_t		TotalThreads() const noexcept { return xBlock*yBlock*zBlock*tBlock; }
 
-		unsigned int	SetBlockX (unsigned int bSize) noexcept { xBlock = bSize; }
-		unsigned int	SetBlockY (unsigned int bSize) noexcept { yBlock = bSize; }
-		unsigned int	SetBlockZ (unsigned int bSize) noexcept { zBlock = bSize; }
+		inline	unsigned int	SetBlockX (unsigned int bSize) noexcept { xBlock = bSize; }
+		inline	unsigned int	SetBlockY (unsigned int bSize) noexcept { yBlock = bSize; }
+		inline	unsigned int	SetBlockZ (unsigned int bSize) noexcept { zBlock = bSize; }
+		inline	unsigned int	SetBlockT (unsigned int bSize) noexcept { tBlock = bSize; }
 
-		void		UpdateBestBlock() noexcept { xBest  = xBlock; yBest  = yBlock; zBest  = zBlock; }
-		void		SetBestBlock()    noexcept { xBlock = xBest;  yBlock = yBest;  zBlock = zBest;  }
+		inline	void		UpdateBestBlock() noexcept { xBest  = xBlock; yBest  = yBlock; zBest  = zBlock; tBest  = tBlock; }
+		inline	void		SetBestBlock()    noexcept { xBlock = xBest;  yBlock = yBest;  zBlock = zBest;  tBlock = tBest;  }
 
 		void		AdvanceBlockSize() noexcept {
 
 			if (isGpu) {
-				do {
+/*				do {
 					if (xBlock < xMax) {
 						do {
 							xBlock++;
@@ -83,84 +87,112 @@
 							isTuned = true;
 						}
 					}
-				}	while (!isTuned && TotalThreads() > Su2Comms::maxThreadsPerBlock);
+				}	while (!isTuned && TotalThreads() > maxThreadsPerBlock());
+				*/
 			} else {
-				if (yBlock < ySize) {
+				if (xBlock < xMax) {
 					do {
-						yBlock++;
-					}	while ((ySize % yBlock) != 0);
+						xBlock+=2;
+					}	while ((xMax % xBlock) != 0);
 				} else {
-					yBlock = 4;
+					xBlock = 4;
 
-					if (zBlock < zSize) {
+					if (yBlock < yMax) {
 						do {
-							zBlock++;
-						}	while ((zSize % zBlock) != 0);
+							yBlock+=2;
+						}	while ((yMax % yBlock) != 0);
 					} else {
-						isTuned = true;
+						yBlock = 2;
+
+						if (zBlock < zMax) {
+							do {
+								zBlock+=2;
+							}	while ((zMax % zBlock) != 0);
+						} else {
+							zBlock = 2;
+
+							if (tBlock < tMax) {
+								do {
+									tBlock+=2;
+								}	while ((tMax % tBlock) != 0);
+							} else {
+								isTuned = true;
+							}
+						}
 					}
 				}
 			}
-		}
+		}	
 
 		std::string	Name   () const noexcept { return name; }
 
 		void		reset  ()                     { gFlops = 0.; gBytes = 0.; }
 		void		add    (double GF, double GB) { gFlops += GF; gBytes += GB; }
 
-		void		setName   (const char * newName) { name.assign(newName); }
-		void		appendName(const char * appName) { name += std::string(appName); }
+		void		SetName   (std::string  newName) { name = newName; }
+		void		SetName   (const char * newName) { name.assign(newName); }
+		void		AppendName(std::string  appName) { name += appName; }
+		void		AppendName(const char * appName) { name += std::string(appName); }
 
-		void		InitBlockSize(unsigned int Lx, unsigned int Lz, size_t dataSize, size_t alignSize, bool gpu = false) {
-			int tmp   = alignSize/dataSize;
-			int shift = 0;
+		void		ResetBlockSize(bool gpu = false) {
+			if (!isGpu) {
+				xBest = xBlock = 4;
+				yBest = yBlock = 2;
+				zBest = zBlock = 2;
+				tBest = tBlock = 2;
+			} else {
+				xBest = xBlock = 8;
+				yBest = yBlock = 1;
+				zBest = zBlock = 1;
+			}
+		}
+
+		void		InitBlockSize(size_t vL[4], bool gpu = false) {
 			size_t lV = SIZE_MAX;
 
 			isGpu = gpu;
 
 			if (!isGpu) {
-
-				while (tmp != 1) {
-					shift++;
-					tmp >>= 1;
-				}
-
-				xSize = (Lx << shift);
-				xMax  = xSize;
-				ySize = (Lx >> shift);
-				yMax  = ySize;
-				zSize = Lz;
-				zMax  = Lz;
-
-				xBest = xBlock = xMax;
-				yBest = yBlock = 4;
-				zBest = zBlock = 1;
-			} else {
-				auto xTmp = Su2Comms::maxThreadsPerDim[0]; 
-				auto yTmp = Su2Comms::maxThreadsPerDim[1];
-				auto zTmp = 1;
-
-				lV = Su2Comms::maxThreadsPerBlock;
-
-				xMax = (Lx*Lx > xTmp) ? xTmp : Lx*Lx;
-				yMax = (Lz > yTmp) ? yTmp : Lz;
-				zMax = 1;
-
-				xSize = Lx*Lx;
-				ySize = Lz;
-				zSize = 1;
-
-				if (yTmp*Su2Comms::maxGridSize[2] < Lz)
-					LogError("Error: not enough threads on gpu to accomodate z-dimension");
-
-				xBest = xBlock = 8;
-				yBest = yBlock = 1;
-				zBest = zBlock = 1;
+				xBest = xBlock = xMax = vL[0];
+				yBest = yBlock = yMax = vL[1];
+				zBest = zBlock = zMax = vL[2];
+				tBest = tBlock = tMax = vL[3];
+//			} else {
+//				auto xTmp = maxThreadsPerDim(0); 
+//				auto yTmp = maxThreadsPerDim(1);
+//				auto zTmp = 1;
+//
+//				lV = maxThreadsPerBlock();
+//
+//				xMax = (Lx*Lx > xTmp) ? xTmp : Lx*Lx;
+//				yMax = (Lz > yTmp) ? yTmp : Lz;
+//				zMax = 1;
+//
+//				xSize = Lx*Lx;
+//				ySize = Lz;
+//				zSize = 1;
+//
+//				if (yTmp*maxGridSize(2) < Lz)
+//					LogError("Error: not enough threads on gpu to accomodate z-dimension");
+//
+//				xBest = xBlock = 8;
+//				yBest = yBlock = 1;
+//				zBest = zBlock = 1;
 			}
 
 			isTuned = false;
 		}
+
+		void		*backup;
+
+		virtual	void	SaveState	() {};
+		virtual	void	RestoreState	() {};
+		virtual	void	Run		() {};
+		virtual	void	Reset		() {};
 	};
 
+	namespace	Su2Tune {
+		void	Tune	(Tunable &func);
+	}
 	
 #endif

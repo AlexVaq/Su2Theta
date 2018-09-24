@@ -4,6 +4,8 @@
 
 	namespace	Su2Enum {
 
+		typedef	unsigned int	uint;
+
 		typedef	enum	Device_s {
 			DeviceCpu,
 			DeviceGpu,
@@ -22,11 +24,59 @@
 			ErrorLog = 4194304,
 		}	LogLevel;
 
+		typedef	enum	ColorKind_s
+		{
+			EvenOdd	= 2,
+			Colored	= 32,
+		}	ColorKind;
+
 		typedef enum    ParityType_s
 		{
 			ParityEven = 0,
 			ParityOdd  = 1,
 		}	ParityType;
+
+		typedef enum    Parity2Type_s
+		{
+			Parity2Even = 0,
+			Parity2Odd  = 1,
+		}	Parity2Type;
+
+		typedef enum    ParityColor_s
+		{
+			BlackEven     = 0,
+			WhiteEven     = 1,
+			DarkRedEven   = 2,
+			RedEven       = 3,
+			CoralEven     = 4,
+			OrangeEven    = 5,
+			SandEven      = 6,
+			YellowEven    = 7,
+			GreenEven     = 8,
+			LimeEven      = 9,
+			TealEven      = 10,
+			SteelEven     = 11,
+			BlueEven      = 12,
+			SlateEven     = 13,
+			VioletEven    = 14,
+			OrchidEven    = 15,
+			BlackOdd      = 16,
+			WhiteOdd      = 17,
+			DarkRedOdd    = 18,
+			RedOdd        = 19,
+			CoralOdd      = 20,
+			OrangeOdd     = 21,
+			SandOdd       = 22,
+			YellowOdd     = 23,
+			GreenOdd      = 24,
+			LimeOdd       = 25,
+			TealOdd       = 26,
+			SteelOdd      = 27,
+			BlueOdd       = 28,
+			SlateOdd      = 29,
+			VioletOdd     = 30,
+			OrchidOdd     = 31,
+		}	ParityColor;
 
 		typedef enum    CommOperation_s
 		{
@@ -63,9 +113,13 @@
 		typedef enum    ProfType_s
 		{
 			ProfGen,
+			ProfPlaq,
+			ProfAction,
+			ProfHB,
+			ProfOvR,
+			ProfMetro,
 			ProfQCharge,
 			ProfTuner,
-			ProfPlaq,
 			ProfFold,
 			ProfHdf5,
 		}	ProfType;

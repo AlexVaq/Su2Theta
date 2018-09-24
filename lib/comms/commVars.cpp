@@ -12,10 +12,10 @@
 
 	namespace	Su2Comms {
 		int  rank          =  0;
-		int  ranksPerNode  =  0;
+		int  ranksPerNode  =  1;
 		int  nThreads      =  1;
 		int  idxAcc        = -1;
-		int  size          =  0;
+		int  size          =  1;
 		char hostname[HOST_NAME_MAX];
 
 		int  maxThreadsPerBlock  = 0;

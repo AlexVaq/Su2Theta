@@ -24,7 +24,7 @@ namespace Su2Prof {
 
 			aTime += fCount.DTime();
 
-			LogMsg (VerbSilent, "\tFunction %-20s GFlops %.4lf\tGBytes %.4lf\tTotal time %.2lfs (%.2lf\%)", name.c_str(), fCount.GFlops(), fCount.GBytes(), fCount.DTime(), 100.*fCount.DTime()/tTime);
+			LogMsg (VerbSilent, "\tFunction %-24s\tGFlops %.3lf\tGBytes %.3lf\tTotal time %.2lfs (%.2lf\%)", name.c_str(), fCount.GFlops(), fCount.GBytes(), fCount.DTime(), 100.*fCount.DTime()/tTime);
         	}
 
 		return	aTime;
@@ -37,19 +37,31 @@ namespace Su2Prof {
 		Profiler	genProfiler("Genconf");
 		profs.insert(std::make_pair(ProfGen, genProfiler));
 
-		Profiler	qProfiler("QCharge");
+		Profiler	actProfiler("Action");
+		profs.insert(std::make_pair(ProfAction, actProfiler));
+
+		Profiler	plaqProfiler("Plaquette");
+		profs.insert(std::make_pair(ProfPlaq, plaqProfiler));
+
+		Profiler	hbProfiler("HeatBath");
+		profs.insert(std::make_pair(ProfHB, hbProfiler));
+
+		Profiler	ovrProfiler("OverRelax");
+		profs.insert(std::make_pair(ProfOvR, ovrProfiler));
+
+		Profiler	mpProfiler("Metro");
+		profs.insert(std::make_pair(ProfMetro, mpProfiler));
+
+		Profiler	qProfiler("QCharge");	// Falta escribir
 		profs.insert(std::make_pair(ProfQCharge, qProfiler));
 
 		Profiler	tunerProfiler("Tuner");
 		profs.insert(std::make_pair(ProfTuner, tunerProfiler));
 
-		Profiler	plaqProfiler("Plaquette");
-		profs.insert(std::make_pair(ProfPlaq, plaqProfiler));
-
 		Profiler	folderProfiler("Folder");
 		profs.insert(std::make_pair(ProfFold, folderProfiler));
 
-		Profiler	hdf5Profiler("Hdf5 I/O");
+		Profiler	hdf5Profiler("Hdf5 I/O");	// Falta escribir
 		profs.insert(std::make_pair(ProfHdf5, hdf5Profiler));
 	}
 

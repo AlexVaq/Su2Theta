@@ -14,6 +14,7 @@
 
 		typedef	Float  data;
 		typedef	Float sData;
+		typedef	bool  Mask;
 
 		static constexpr size_t sWide = 1;
 		static constexpr size_t xWide = 1;
@@ -28,6 +29,23 @@
 
 
 		/*	No Vectorization (GPU)	*/
+
+		void	Save	(sData * __restrict__ out) {
+			std::copy(a, a+4, out);
+		}
+
+		void	SaveMask(Mask msk, sData * __restrict__ out) {
+			if (msk)
+				std::copy(a, a+4, out);
+		}
+
+		void	Stream	(sData * __restrict__ out) {	// FIXME Not truly streaming
+			std::copy(a, a+4, out);
+		}
+
+		sData	operator% (const Su2 &b) {
+			return	a[0]*b.a[0] - a[1]*b.a[1] - a[2]*b.a[2] - a[3]*b.a[3];
+		}
 
 		Su2	operator* (const Su2 &b) {
 			Su2	tmp;
@@ -49,9 +67,9 @@
 			Su2	tmp;
 
 			tmp.a[0] = a[0] + b.a[0];
-			tmp.a[1] = a[0] + b.a[1];
-			tmp.a[2] = a[0] + b.a[2];
-			tmp.a[3] = a[0] + b.a[3];
+			tmp.a[1] = a[1] + b.a[1];
+			tmp.a[2] = a[2] + b.a[2];
+			tmp.a[3] = a[3] + b.a[3];
 
 			return	tmp;
 		}
@@ -65,9 +83,9 @@
 			Su2	tmp;
 
 			tmp.a[0] = a[0] - b.a[0];
-			tmp.a[1] = a[0] - b.a[1];
-			tmp.a[2] = a[0] - b.a[2];
-			tmp.a[3] = a[0] - b.a[3];
+			tmp.a[1] = a[1] - b.a[1];
+			tmp.a[2] = a[2] - b.a[2];
+			tmp.a[3] = a[3] - b.a[3];
 
 			return	tmp;
 		}
@@ -160,6 +178,12 @@
 			return	(*this);
 		}
 
+		Su2	Reflect	(Su2 &&staple) {
+			auto sNrm = staple.Norm()*0.5;
+			auto lmba = ((*this)%staple)/sNrm;
+			return	((!staple)*lmba) - (*this);
+		}
+
 		Su2&	SetRandom(const Float eps = 1.) {
 			#pragma unroll
 			for (int i=0; i<4; i++) {
@@ -177,12 +201,12 @@
 			return	(*this);
 		}
 
-		Su2&	Pert	(const Float eps) {
+		Su2	Pert	(const Float eps) {
 			Su2<Float> tmp;
 
 			tmp.SetRandom(eps);
 
-			(*this) *= tmp;
+			return	tmp*(*this);
 		}
 
 		Su2	xPermute() {

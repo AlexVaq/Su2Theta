@@ -1,6 +1,7 @@
 #ifndef	__VSU2_CLASS
 	#define	__VSU2_CLASS
 
+	#include "su2/su2.h"
 	#include "simd/simd.h"
 	#include "random/random.h"
 	#include <algorithm>
@@ -18,6 +19,7 @@
 		typedef		 vFloat        data;
 		typedef	typename vFloat::sData sData;
 		typedef	typename vFloat::Mask  Mask;
+		typedef		 Su2<sData>    sClass;
 
 		static constexpr size_t sWide = sizeof(vFloat)/sizeof(sData);
 		static constexpr size_t xWide = vFloat::xWide;
@@ -25,13 +27,38 @@
 		static constexpr size_t zWide = vFloat::zWide;
 		static constexpr size_t tWide = vFloat::tWide;
 
-		vSu2	() 					     { a[0] = vFloat(1.); a[1] = a[2] = a[3] = vFloat(0.); }
-		vSu2	(vFloat a0, vFloat a1, vFloat a2, vFloat a3) { a[0] = a0;   a[1] = a1;   a[2] = a2;   a[3] = a3;   }
-		vSu2	(vFloat *b)				     { for(int i=0;i<4;i++) a[i] = b[i]; }
-		vSu2	(sData   c)				     { a[0] = a[1] = a[2] = a[3] = vFloat(c); }
+		vSu2	() 					     { }
+		vSu2	(vFloat a0, vFloat a1, vFloat a2, vFloat a3) { a[0] = a0;   a[1] = a1;   a[2] = a2;   a[3] = a3; }
+		vSu2	(sData  c)				     { a[0] = a[1] = a[2] = a[3] = vFloat(c); }
+		vSu2	(sData * __restrict__ b)		     { a[0].Load(b); a[1].Load(b+sWide); a[2].Load(b+2*sWide); a[3].Load(b+3*sWide); }
 
 
 		/*	Vectorized datatypes(CPU)	*/
+
+		void	Save	(sData * __restrict__ out) {
+			a[0].Save(out);
+			a[1].Save(out+1*sWide);
+			a[2].Save(out+2*sWide);
+			a[3].Save(out+3*sWide);
+		}
+
+		void	SaveMask(Mask msk, sData * __restrict__ out) {
+			a[0].SaveMask(msk, out);
+			a[1].SaveMask(msk, out+1*sWide);
+			a[2].SaveMask(msk, out+2*sWide);
+			a[3].SaveMask(msk, out+3*sWide);
+		}
+
+		void	Stream	(sData * __restrict__ out) {
+			a[0].Stream(out);
+			a[1].Stream(out+1*sWide);
+			a[2].Stream(out+2*sWide);
+			a[3].Stream(out+3*sWide);
+		}
+
+		vFloat	operator% (const vSu2 &b) {
+			return	a[0]*b.a[0] - a[1]*b.a[1] - a[2]*b.a[2] - a[3]*b.a[3];
+		}
 
 		vSu2	operator* (const vSu2 &b) {
 			vSu2	tmp;
@@ -53,9 +80,9 @@
 			vSu2	tmp;
 
 			tmp.a[0] = a[0] + b.a[0];
-			tmp.a[1] = a[0] + b.a[1];
-			tmp.a[2] = a[0] + b.a[2];
-			tmp.a[3] = a[0] + b.a[3];
+			tmp.a[1] = a[1] + b.a[1];
+			tmp.a[2] = a[2] + b.a[2];
+			tmp.a[3] = a[3] + b.a[3];
 
 			return	tmp;
 		}
@@ -69,9 +96,9 @@
 			vSu2	tmp;
 
 			tmp.a[0] = a[0] - b.a[0];
-			tmp.a[1] = a[0] - b.a[1];
-			tmp.a[2] = a[0] - b.a[2];
-			tmp.a[3] = a[0] - b.a[3];
+			tmp.a[1] = a[1] - b.a[1];
+			tmp.a[2] = a[2] - b.a[2];
+			tmp.a[3] = a[3] - b.a[3];
 
 			return	tmp;
 		}
@@ -145,15 +172,16 @@
 			bool   notReady;
 
 			do {
-				r  = Su2Rand::genVRand<vFloat>();
+				r  = Su2Rand::genVRand<vFloat>();//vFloat(0.5);
 				s  = (vFloat(1.) - r) * b + r;
 				aN = vFloat(1.) + log(s) / e;
 
-				r  = Su2Rand::genVRand<vFloat>();
+				r  = Su2Rand::genVRand<vFloat>();//vFloat(0.0);
 				s  = r*r;
 				z  = vFloat(1.) - aN*aN;
 
 				msk = (s<=z);
+
 				tmp.a[0] = (aN^msk) + (tmp.a[0]^(!msk));
 				tMsk |= msk;
 				notReady = (tMsk.Count() != vFloat::nData) ? true : false;
@@ -161,12 +189,12 @@
 
 			z    = vFloat(1.) - tmp.a[0]*tmp.a[0];
 			s    = sqrt(z);
-			r    = Su2Rand::genVRand<vFloat>();
+			r    = Su2Rand::genVRand<vFloat>();//vFloat(0.5);
 
 			tmp.a[3] = (vFloat(2.)*r - vFloat(1.))*s;
 
 			s    = sqrt(abs(z - tmp.a[3]*tmp.a[3]));
-			r    = vFloat(2.)*vFloat(M_PI)*Su2Rand::genVRand<vFloat>();
+			r    = vFloat(2.)*vFloat(M_PI)*Su2Rand::genVRand<vFloat>();//(vFloat(0.5));
 
 			tmp.a[1] = s*cos(r);
 			tmp.a[2] = s*sin(r);
@@ -179,6 +207,12 @@
 			(*this) = tmp*(*this);
 
 			return	(*this);
+		}
+
+		vSu2	Reflect	(vSu2 &&staple) {
+			auto sNrm = staple.Norm()*0.5;
+			auto lmba = ((*this)%staple)/sNrm;
+			return	((!staple)*lmba) - (*this);
 		}
 
 		vSu2&	SetRandom(const sData eps = 1.) {
@@ -198,12 +232,12 @@
 			return	(*this);
 		}
 
-		vSu2&	Pert	(const typename vFloat::sData eps) {
+		vSu2	Pert	(const typename vFloat::sData eps) {
 			vSu2<vFloat> tmp;
 
 			tmp.SetRandom(eps);
 
-			(*this) *= tmp;
+			return	tmp*(*this);
 		}
 
 		vSu2	xPermute() {
@@ -238,11 +272,20 @@
 			return	tmp;
 		}
 
+		Su2<sData>	Extract(const int lane) {
+			auto a0 = a[0][lane];
+			auto a1 = a[1][lane];
+			auto a2 = a[2][lane];
+			auto a3 = a[3][lane];
+
+			return	Su2<sData>(a0, a1, a2, a3);
+		}
+
 		void	Print() {
-			printsVar(a[0].raw(), "0: ");
-			printsVar(a[1].raw(), "1: ");
-			printsVar(a[2].raw(), "2: ");
-			printsVar(a[3].raw(), "3: ");
+			a[0].Print("0: ");
+			a[1].Print("1: ");
+			a[2].Print("2: ");
+			a[3].Print("3: ");
 		}
 	};
 #endif

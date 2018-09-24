@@ -100,6 +100,11 @@ endif()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} ${AVX_FLAGS} ${SSE_FLAGS} ${FMA_FLAGS} -mcmodel=medium -std=c++17")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} ${AVX_FLAGS} ${SSE_FLAGS} ${FMA_FLAGS} -mcmodel=medium -std=c++17")
+##
+##if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+##    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -inline-forceinline")
+##    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -inline-forceinline")
+##endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wa,-q -lc++")

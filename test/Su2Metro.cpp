@@ -13,9 +13,8 @@
 
 using namespace Simd;
 
-constexpr int nTerm  = 0;
-constexpr int nIters = 16;//512;
-constexpr int nOvHB  = 3;
+constexpr int nTerm  = 16;//384;
+constexpr int nIters = 32;//512;
 
 int	main (int argc, char *argv[]) {
 	std::chrono::high_resolution_clock::time_point start, stop;
@@ -23,54 +22,40 @@ int	main (int argc, char *argv[]) {
 
 	initSu2 (argc, argv);
 
-	auto *myLat = new Lattice<Su2<float>,Colored>(16, 16);
+	Lattice<Su2<float>,EvenOdd> *myLat = new Lattice<Su2<float>,EvenOdd>(16, 16);
 	myLat->SetRand();
 
-	Su2Action::Action<Su2<float>,Colored> wAction(*myLat, 2.05, 0.0);
-
-	printf("Start tuning\n"); fflush(stdout);
-	Su2Tune::Tune(wAction);
+	Su2Action::Action   <Su2<float>,EvenOdd> wAction(*myLat, 2.05, 0.0);
 
 	auto	sAct = wAction.allPts();
+
 	printf("Plaquette value: %le\n\n", sAct/(6.*myLat->Volume()));
+
+	auto	sMetro = Su2Action::Metropolis<Su2<float>,EvenOdd>(wAction);
+	auto	wPlq   = Su2Action::Plaquette <Su2<float>,EvenOdd>(*myLat);
+
+	Su2Tune::Tune(sMetro);
+	Su2Tune::Tune(wPlq);
+
+	start = std::chrono::high_resolution_clock::now();
 
 	double	stdAvg = 0., stdErr = 0.;
 
-	auto	sHB = Su2Action::HeatBath <Su2<float>,Colored>(wAction);
-	auto	sOR = Su2Action::OverRelax<Su2<float>,Colored>(wAction);
-	auto	sPq = Su2Action::Plaquette<Su2<float>,Colored>(*myLat);
-
-	Su2Tune::Tune(sHB);
-	Su2Tune::Tune(sOR);
-	Su2Tune::Tune(sPq);
-
-	sAct = sPq();
-	printf("Plaquette before: %le\n\n", sAct);
-	start = std::chrono::high_resolution_clock::now();
-
-	for	(int i = 0; i<nTerm; i++) {
-		sHB(nOvHB);
-		sOR();
-	}
+	for	(int i = 0; i<nTerm; i++)
+		sMetro();
 
 	for	(int i = 0; i<nIters; i++) {
-		sHB(nOvHB);
-		sOR();
+		sMetro();
 
-		sAct = sPq();
+		sAct = wPlq();
 
 		stdAvg += sAct;
 		stdErr += sAct*sAct;
 
-//		if (!(i%16)) {
-			printf("%04d\t%.7e\n", i, sAct);
-//		}
-
+		printf("%04d\t%.4f\n", i, sAct);
 	}
 
 	stop  = std::chrono::high_resolution_clock::now();
-	sAct = sPq();
-	printf("Plaquette after:  %le\n\n", sAct);
 
 	delete myLat;
 
@@ -80,46 +65,39 @@ int	main (int argc, char *argv[]) {
 	printf("Elapsed time %.3lf ms\n", ((double) stdElapsed.count())/1e6);
 	printf("Final Plaquette: %le +/- %le\n", stdAvg, std::sqrt((stdErr - stdAvg*stdAvg)/((double) (nIters - 1))));
 
-	Lattice<vSu2<Simd_f>,Colored> *myVLat = new Lattice<vSu2<Simd_f>,Colored>(16, 16);
+	Lattice<vSu2<Simd_f>,EvenOdd> *myVLat = new Lattice<vSu2<Simd_f>,EvenOdd>(16, 16);
 	myVLat->SetRand();
 
-	Su2Action::Action<vSu2<Simd_f>,Colored> wVAction(*myVLat, 2.05, 0.0);
+	Su2Action::Action<vSu2<Simd_f>,EvenOdd> wVAction(*myVLat, 2.05, 0.0);
 
-	printf("Start tuning\n"); fflush(stdout);
-	Su2Tune::Tune(wVAction);
 	auto sVAct = wVAction.allPts();
 
 	printf("Plaquette value: %le\n\n", sVAct/(6.*myVLat->Volume()));
 
-	double	avxAvg = 0., avxErr = 0.;
+	auto vMetro = Su2Action::Metropolis<vSu2<Simd_f>,EvenOdd>(wVAction);
+	auto vPlq   = Su2Action::Plaquette <vSu2<Simd_f>,EvenOdd>(*myVLat);
 
-	auto	vHB = Su2Action::HeatBath <vSu2<Simd_f>,Colored>(wVAction);
-	auto	vOR = Su2Action::OverRelax<vSu2<Simd_f>,Colored>(wVAction);
-	auto	vPq = Su2Action::Plaquette<vSu2<Simd_f>,Colored>(*myVLat);
-
-	Su2Tune::Tune(vHB);
-	Su2Tune::Tune(vOR);
-	Su2Tune::Tune(vPq);
+	Su2Tune::Tune(vMetro);
+	Su2Tune::Tune(vPlq);
 
 	start = std::chrono::high_resolution_clock::now();
 
-	for	(int i = 0; i<nTerm; i++) {
-		vHB(nOvHB);
-		vOR();
-	}
+	double	avxAvg = 0., avxErr = 0.;
+
+	for	(int i = 0; i<nTerm; i++)
+		vMetro();
 
 	for	(int i = 0; i<nIters; i++) {
-		vHB(nOvHB);
-		vOR();
+		vMetro();
 
-		sVAct = vPq();
+		sVAct = vPlq();
 
 		avxAvg += sVAct;
 		avxErr += sVAct*sVAct;
 
-	//	if (!(i%16)) {
-			printf("%04d\t%.7e\n", i, sVAct);
-	//	}
+//		if (!(i%16)) {
+      			printf("%04d\t%.4f\n", i, sVAct);
+//		}
 
 	}
 

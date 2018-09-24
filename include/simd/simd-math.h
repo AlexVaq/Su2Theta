@@ -124,7 +124,8 @@ inline _MData_	opCode(exp_pd, _MData_ x) {
 	R2 = opCode(castps_pd, opCode(blend_ps, opCode(castsi256_ps, xM), opCode(setzero_ps), 0b01010101));
 #endif
 	R1 = opCode(add_pd, Sl, opCode(add_pd, St, opCode(mul_pd, S, Q)));
-	return	opCode(mul_pd, R2, R1);
+	//return	opCode(mul_pd, R2, R1);
+	return	opCode(and_pd, opCode(mul_pd, R2, R1), opCode(cmp_pd, x, opCode(set1_pd, -708.5), _CMP_NLT_UQ));
 
 }
 
@@ -135,7 +136,6 @@ inline _MData_	opCode(log_pd, _MData_ x) {
 	_MData_ F, f, fc, i2, Y, Cl, Ct, m;
 	_MHnt_	j;
 
-	// DENORMALIZED: multiplico por un número grande, ya no es denormalized. Opero y resto el log del número grande
 #if	defined(__AVX512F__)
 	_MInt_	mi;
 
@@ -361,8 +361,6 @@ inline _MData_	opCode(exp_ps, _MData_ x) {
 #endif
 }
 
-#endif
-
 inline _MData_	opCode(log_ps, _MData_ x) {
 
 	/*	1. Filtra negativos	*
@@ -373,7 +371,6 @@ inline _MData_	opCode(log_ps, _MData_ x) {
 	_MHnt_	mh, ml;
 #endif
 
-	// DENORMALIZED: multiplico por un número grande, ya no es denormalized. Opero y resto el log del número grande
 #if	defined(__AVX512F__)
 	auto msk = opCode(cmp_ps_mask, opCode(castsi512_ps, opCode(and_si512, opCode(castps_si512, x), opCode(castps_si512, fInf))), opCode(setzero_ps), _CMP_EQ_UQ);
 	f  = opCode(mask_blend_ps, msk, x, opCode(mul_ps, x, nmDnf));
@@ -445,6 +442,8 @@ inline _MData_	opCode(log_ps, _MData_ x) {
 			opCode(add_ps, fc, opCode(add_ps, Y, opCode(sub_ps, Ct, opCode(blendv_ps, opCode(setzero_ps), lgDtf, msk)))));
 #endif
 }
+
+#endif
 
 #undef	_MData_
 #undef	_PREFIX
