@@ -3,10 +3,16 @@
 	Saito and Makoto Matsumoto webpage (dSFMT package
 	v2.2.3 and SFMT package v1.5.1)	and adapted to AVX,
 	AVX-2 and AVX-512. Tested against the original code,
-	reproducing the same random numbers.
+	reproducing the same random numbers, for the first
+	128 bits of the vector. The rest of the vector uses
+	the same RNG but with a different seed.
 
 	sFMT is used for single precision, whereas dSFMT is
 	used for double precision.
+
+	More info:
+
+	http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/SFMT/
 */
 
 #include <vector>
@@ -55,7 +61,7 @@ namespace	Su2Rand {
 
 		uint	*iState  = static_cast<uint  *>  (static_cast<void*>(state));
 
-		iState[0] = 1234;//seed;
+		iState[0] = seed;
 		iState[1] = mtInit * (iState[0]^(iState[0] >> 30)) + 1;
 		iState[2] = mtInit * (iState[1]^(iState[1] >> 30)) + 2;
 		iState[3] = mtInit * (iState[2]^(iState[2] >> 30)) + 3;
