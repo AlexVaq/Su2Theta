@@ -24,6 +24,7 @@ void	initSu2 (int argc, char *argv[]) {
 
 	Su2Prof::initProfilers();
 	Su2Rand::initRandom();
+	Su2Rand::vInitRandom();
 
 	return;
 }

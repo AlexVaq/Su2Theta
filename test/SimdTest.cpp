@@ -207,7 +207,7 @@ int	main (int argc, char *argv[]) {
 
 	start = std::chrono::high_resolution_clock::now();
 
-	for (size_t i=0; i<nIters; i+=Simd_f::nData)
+	for (size_t i=0; i<nIters; i+=Simd_f::sWide)
 		opCode(store_ps, &(static_cast<float*>(news)[i]), opCode(log_ps, opCode(load_ps, &(static_cast<float*>(insf)[i]))));
 
 	stop  = std::chrono::high_resolution_clock::now();
@@ -271,7 +271,7 @@ int	main (int argc, char *argv[]) {
 
 	start = std::chrono::high_resolution_clock::now();
 
-	for (size_t i=0; i<nIters; i+=Simd_d::nData)
+	for (size_t i=0; i<nIters; i+=Simd_d::sWide)
 		opCode(store_pd, &(static_cast<double*>(newsd)[i]), opCode(log_pd, opCode(load_pd, &(static_cast<double*>(insd)[i]))));
 
 	stop  = std::chrono::high_resolution_clock::now();
@@ -313,7 +313,7 @@ int	main (int argc, char *argv[]) {
 
 	start = std::chrono::high_resolution_clock::now();
 
-	for (size_t i=0; i<nIters; i+=Simd_f::nData)
+	for (size_t i=0; i<nIters; i+=Simd_f::sWide)
 		opCode(store_ps, &(static_cast<float*>(news)[i]), opCode(exp_ps, opCode(load_ps, &(static_cast<float*>(insf)[i]))));
 
 	stop  = std::chrono::high_resolution_clock::now();
@@ -361,7 +361,7 @@ int	main (int argc, char *argv[]) {
 
 	start = std::chrono::high_resolution_clock::now();
 
-	for (size_t i=0; i<nIters; i+=Simd_f::nData)
+	for (size_t i=0; i<nIters; i+=Simd_f::sWide)
 		opCode(store_ps, &(static_cast<float*>(news)[i]), opCode(exp_ps, opCode(load_ps, &(static_cast<float*>(insf)[i]))));
 
 	stop  = std::chrono::high_resolution_clock::now();
@@ -408,7 +408,7 @@ int	main (int argc, char *argv[]) {
 
 	start = std::chrono::high_resolution_clock::now();
 
-	for (size_t i=0; i<nIters; i+=Simd_d::nData)
+	for (size_t i=0; i<nIters; i+=Simd_d::sWide)
 		opCode(store_pd, &(static_cast<double*>(newsd)[i]), opCode(exp_pd, opCode(load_pd, &(static_cast<double*>(insd)[i]))));
 
 	stop  = std::chrono::high_resolution_clock::now();
@@ -456,7 +456,7 @@ int	main (int argc, char *argv[]) {
 
 	start = std::chrono::high_resolution_clock::now();
 
-	for (size_t i=0; i<nIters; i+=Simd_d::nData)
+	for (size_t i=0; i<nIters; i+=Simd_d::sWide)
 		opCode(store_pd, &(static_cast<double*>(newsd)[i]), opCode(exp_pd, opCode(load_pd, &(static_cast<double*>(insd)[i]))));
 
 	stop  = std::chrono::high_resolution_clock::now();
@@ -507,4 +507,9 @@ int	main (int argc, char *argv[]) {
 
 	free(news); free(newsd);
 	free(insf); free(insd);
+
+	for (int i=0; i<nIters; i++) {
+		auto rnd = vGenRand<Simd_d>();
+		rnd.Print("Rng: ");
+	}
 }

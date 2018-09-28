@@ -172,11 +172,11 @@
 			bool   notReady;
 
 			do {
-				r  = Su2Rand::genVRand<vFloat>();//vFloat(0.5);
+				r  = Su2Rand::vGenRand<vFloat>();//genVRand<vFloat>();//vFloat(0.5);
 				s  = (vFloat(1.) - r) * b + r;
 				aN = vFloat(1.) + log(s) / e;
 
-				r  = Su2Rand::genVRand<vFloat>();//vFloat(0.0);
+				r  = Su2Rand::vGenRand<vFloat>();//genVRand<vFloat>();//vFloat(0.0);
 				s  = r*r;
 				z  = vFloat(1.) - aN*aN;
 
@@ -184,17 +184,17 @@
 
 				tmp.a[0] = (aN^msk) + (tmp.a[0]^(!msk));
 				tMsk |= msk;
-				notReady = (tMsk.Count() != vFloat::nData) ? true : false;
+				notReady = (tMsk.Count() != vFloat::sWide) ? true : false;
 			}	while (notReady);
 
 			z    = vFloat(1.) - tmp.a[0]*tmp.a[0];
 			s    = sqrt(z);
-			r    = Su2Rand::genVRand<vFloat>();//vFloat(0.5);
+			r    = Su2Rand::vGenRand<vFloat>();//genVRand<vFloat>();//vFloat(0.5);
 
 			tmp.a[3] = (vFloat(2.)*r - vFloat(1.))*s;
 
 			s    = sqrt(abs(z - tmp.a[3]*tmp.a[3]));
-			r    = vFloat(2.)*vFloat(M_PI)*Su2Rand::genVRand<vFloat>();//(vFloat(0.5));
+			r    = vFloat(2.)*vFloat(M_PI)*Su2Rand::vGenRand<vFloat>();//genVRand<vFloat>();//(vFloat(0.5));
 
 			tmp.a[1] = s*cos(r);
 			tmp.a[2] = s*sin(r);
@@ -218,7 +218,7 @@
 		vSu2&	SetRandom(const sData eps = 1.) {
 			#pragma unroll
 			for (int i=0; i<4; i++) {
-				vFloat r = Su2Rand::genVRand<vFloat>();
+				vFloat r = Su2Rand::vGenRand<vFloat>();//genVRand<vFloat>();
 				a[i] = vFloat(2.*eps)*r - vFloat(eps);
 			}
 

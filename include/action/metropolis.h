@@ -72,7 +72,8 @@
 							auto link = myAct.Latt().Data(cPt, mu);
 							auto nLnk = link.Pert(1.0);
 							auto dLnk = ((nLnk - link)*stpl).Trace()*(myAct.Beta()*(cOrd == EvenOdd ? 0.5 : 5./6.));
-							myAct.Latt().InsertMask((Su2Rand::genVRand<typename T::data>() < exp(dLnk)), std::forward<T>(nLnk), cPt.Index(myAct.Latt().vLength()), mu);
+							//myAct.Latt().InsertMask((Su2Rand::genVRand<typename T::data>() < exp(dLnk)), std::forward<T>(nLnk), cPt.Index(myAct.Latt().vLength()), mu);
+							myAct.Latt().InsertMask((Su2Rand::vGenRand<typename T::data>() < exp(dLnk)), std::forward<T>(nLnk), cPt.Index(myAct.Latt().vLength()), mu);
 						    }
 						  }
 						}

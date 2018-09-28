@@ -103,6 +103,10 @@
 				data = opCode(set_ps, x15, x14, x13, x12, x11, x10, x9, x8, x7, x6, x5, x4, x3, x2, x1, x0);
 			}
 
+				Simd_f(uint x0, uint x1, uint x2, uint x3) {
+				data = opCode(castsi512_ps, opCode(set_epi32, x3, x2, x1, x0, x3, x2, x1, x0, x3, x2, x1, x0, x3, x2, x1, x0));
+			}
+
 				Simd_f(float x0) {
 				data = opCode(set1_ps, x0);
 			}
@@ -194,6 +198,51 @@
 				return	opCode(maskz_mov_ps, msk.data, this->data);
 			}
 
+			inline	Simd_f	operator&(const Simd_f &b) {
+				return	opCode(and_ps, this->data, b.data);
+			}
+
+			inline	Simd_f	operator|(const Simd_f &b) {
+				return	opCode(or_ps,  this->data, b.data);
+			}
+
+			inline	Simd_f	operator^(const Simd_f &b) {
+				return	opCode(xor_ps, this->data, b.data);
+			}
+
+			inline	Simd_f	operator>>(uint i) {
+				return	opCode(castsi512_ps, opCode(srli_epi32, opCode(castps_si512, this->data), i));
+			}
+
+			inline	Simd_f	operator<<(uint i) {
+				return	opCode(castsi512_ps, opCode(slli_epi32, opCode(castps_si512, this->data), i));
+			}
+
+			inline	Simd_f	&operator&=(const Simd_f &x) {
+				(*this) = (*this)&x;
+				return	(*this);
+			}
+
+			inline	Simd_f	&operator|=(const Simd_f &x) {
+				(*this) = (*this)|x;
+				return	(*this);
+			}
+
+			inline	Simd_f	&operator^=(const Simd_f &x) {
+				(*this) = (*this)^x;
+				return	(*this);
+			}
+
+			inline	Simd_f	&operator>>=(uint i) {
+				(*this) = (*this)>>i;
+				return	(*this);
+			}
+
+			inline	Simd_f	&operator<<=(uint i) {
+				(*this) = (*this)<<i;
+				return	(*this);
+			}
+
 			inline	Mask_f	operator>(const Simd_f &b) {
 				return	opCode(cmp_ps_mask, this->data, b.data, _CMP_GT_OQ);
 			}
@@ -236,6 +285,10 @@
 
 			inline	Simd_f	tPermute () {
 				return	opCode(permute_ps, this->data, 0b10110001);
+			}
+
+			inline	Simd_f	rPermute () {
+				return	opCode(permute_ps, this->data, 0b00011011);
 			}
 
 			inline	void	SetRandom () {
@@ -353,6 +406,10 @@
 				data = opCode(set_pd, x7, x6, x5, x4, x3, x2, x1, x0);
 			}
 
+				Simd_d(uint64 x0, uint64 x1) {
+				data = opCode(castsi512_pd, opCode(set_epi64, x1, x0, x1, x0, x1, x0, x1, x0));
+			}
+
 				Simd_d(double x0) {
 				data = opCode(set1_pd, x0);
 			}
@@ -440,6 +497,51 @@
 				return	opCode(maskz_mov_pd, msk.data, this->data);
 			}
 
+			inline	Simd_d	operator&(const Simd_d &x) {
+				return	opCode(and_pd, this->data, x.data);
+			}
+
+			inline	Simd_d	operator|(const Simd_d &x) {
+				return	opCode(or_pd,  this->data, x.data);
+			}
+
+			inline	Simd_d	operator^(const Simd_d &x) {
+				return	opCode(xor_pd, this->data, x.data);
+			}
+
+			inline	Simd_d	operator>>(uint i) {
+				return	opCode(castsi512_pd, opCode(srli_epi64, opCode(castpd_si512, this->data), i));
+			}
+
+			inline	Simd_d	operator<<(uint i) {
+				return	opCode(castsi512_pd, opCode(slli_epi64, opCode(castpd_si512, this->data), i));
+			}
+
+			inline	Simd_d	&operator&=(const Simd_d &x) {
+				(*this) = (*this)&x;
+				return	(*this);
+			}
+
+			inline	Simd_d	&operator|=(const Simd_d &x) {
+				(*this) = (*this)|x;
+				return	(*this);
+			}
+
+			inline	Simd_d	&operator^=(const Simd_d &x) {
+				(*this) = (*this)^x;
+				return	(*this);
+			}
+
+			inline	Simd_d	&operator>>=(uint i) {
+				(*this) = (*this)>>i;
+				return	(*this);
+			}
+
+			inline	Simd_d	&operator<<=(uint i) {
+				(*this) = (*this)<<i;
+				return	(*this);
+			}
+
 			inline	Mask_d	operator>(const Simd_d &b) {
 				return	opCode(cmp_pd_mask, this->data, b.data, _CMP_GT_OQ);
 			}
@@ -482,6 +584,10 @@
 
 			inline	Simd_d	tPermute () {
 				return	opCode(permute_pd, this->data, 0b01010101);
+			}
+
+			inline	Simd_d	rPermute () {
+				return	opCode(castps_pd, opCode(permute_ps, opCode(castpd_ps, this->data), 0b00011011));
 			}
 
 			inline	void	SetRandom () {

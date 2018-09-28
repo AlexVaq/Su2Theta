@@ -1,10 +1,12 @@
 #ifndef __ENUM_FIELDS
 	#define __ENUM_FIELDS
+	#include <cstdint>
 	#include <mpi.h>
 
-	namespace	Su2Enum {
+	typedef	unsigned int	uint;
+	typedef	uint64_t	uint64;
 
-		typedef	unsigned int	uint;
+	namespace	Su2Enum {
 
 		typedef	enum	Device_s {
 			DeviceCpu,

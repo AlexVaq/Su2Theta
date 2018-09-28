@@ -1,4 +1,5 @@
 #include "simd/simd.h"
+#include "random/random.h"
 
 namespace	Simd {
 
@@ -29,15 +30,18 @@ namespace	Simd {
                 	return	opCode(andnot_ps, opCode(castsi256_ps, iSgnAbsf), x.data);
 		#endif
         }
-    /* 
-     	Simd_f	log2	(const Simd_f &x) {
-                return	opCode(set_ps, std::log(x.data[7]), std::log(x.data[6]), std::log(x.data[5]), std::log(x.data[4]), std::log(x.data[3]), std::log(x.data[2]), std::log(x.data[1]), std::log(x.data[0]));
-        }
 
-        Simd_f	exp2	(const Simd_f &x) {
-                return	opCode(set_ps, std::exp(x.data[7]), std::exp(x.data[6]), std::exp(x.data[5]), std::exp(x.data[4]), std::exp(x.data[3]), std::exp(x.data[2]), std::exp(x.data[1]), std::exp(x.data[0]));
-        }
-*/
+	inline	void	Simd_f::SetRandom () {
+		#ifdef	__AVX512F__
+			(*this) = Simd_f(Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(),
+					 Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(),
+					 Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(),
+					 Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand());
+		#else
+			(*this) = Simd_f(Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(),
+					 Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand());
+		#endif
+	}
 
 	Simd_d  sqrt	(const Simd_d &x) {
                 return	opCode(sqrt_pd, x.data);
@@ -58,15 +62,7 @@ namespace	Simd {
         Simd_d  exp	(const Simd_d &x) {
                 return	opCode(exp_pd, x.data);
         }
-/*
-        Simd_d  log2	(const Simd_d &x) {
-                return	opCode(set_pd, std::log(x.data[3]), std::log(x.data[2]), std::log(x.data[1]), std::log(x.data[0]));
-        }
 
-        Simd_d  exp2	(const Simd_d &x) {
-                return	opCode(set_pd, std::exp(x.data[3]), std::exp(x.data[2]), std::exp(x.data[1]), std::exp(x.data[0]));
-        }
-*/
         Simd_d  abs	(const Simd_d &x) {
 		#ifdef	__AVX512F__
                 	return	opCode(abs_pd, x.data);
@@ -74,4 +70,13 @@ namespace	Simd {
                 	return	opCode(andnot_pd, opCode(castsi256_pd, iSgnAbsd), x.data);
 		#endif
         }
+
+	inline	void	Simd_d::SetRandom () {
+		#ifdef	__AVX512F__
+			(*this) = Simd_d(Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(),
+					 Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand());
+		#else
+			(*this) = Simd_d(Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand());
+		#endif
+	}
 };

@@ -10,7 +10,7 @@
 	#define opCode(x,...) opCode_N(_PREFIX_, x, __VA_ARGS__)
 
 	#include <immintrin.h>
-	#include "random/random.h"
+	#include "enumFields.h"
 
 	#define _MData_ __m256
 	#define _MDatd_ __m256d
@@ -28,7 +28,7 @@
 		class	Simd_d;
 
 		class	Mask_f	{
-                	static constexpr size_t nData = sAlign/sizeof(int);
+                	static constexpr size_t sWide = sAlign/sizeof(int);
 
 			private:
 
@@ -93,7 +93,7 @@
 
 			public:
 
-                	static constexpr size_t nData = sAlign/sizeof(float);
+                	static constexpr size_t sWide = sAlign/sizeof(float);
                 	static constexpr size_t xWide = 1;
                 	static constexpr size_t yWide = 2;
                 	static constexpr size_t zWide = 2;
@@ -108,6 +108,10 @@
 
 				Simd_f(float x0, float x1, float x2, float x3, float x4, float x5, float x6, float x7) {
 				data = opCode(set_ps, x7, x6, x5, x4, x3, x2, x1, x0);
+			}
+
+				Simd_f(uint x0, uint x1, uint x2, uint x3) {
+				data = opCode(castsi256_ps, opCode(set_epi32, x3, x2, x1, x0, x3, x2, x1, x0));
 			}
 
 				Simd_f(float x0) {
@@ -201,6 +205,84 @@
 				return	opCode(and_ps, this->data, opCode(castsi256_ps, msk.data));
 			}
 
+			inline	Simd_f	operator&(const Simd_f &b) {
+				return	opCode(and_ps, this->data, b.data);
+			}
+
+			inline	Simd_f	operator|(const Simd_f &b) {
+				return	opCode(or_ps,  this->data, b.data);
+			}
+
+			inline	Simd_f	operator^(const Simd_f &b) {
+				return	opCode(xor_ps, this->data, b.data);
+			}
+
+			inline	Simd_f	operator>>(uint i) {
+				#ifndef	__AVX2__
+				_MHnt_	high = opCode(extractf128_si256, opCode(castps_si256, this->data), 1);
+				_MHnt_	low  = opCode(extractf128_si256, opCode(castps_si256, this->data), 0);
+				return	opCode(insertf128_ps, opCode(castps128_ps256, opCodl(srli_epi32, low, i)), opCodl(srli_epi32, high, i), 1);
+				#else
+				return	opCode(castsi256_ps, opCode(srli_epi32, opCode(castps_si256, this->data), i));
+				#endif
+			}
+
+			inline	Simd_f	operator<<(uint i) {
+				#ifndef	__AVX2__
+				_MHnt_	high = opCode(extractf128_si256, opCode(castps_si256, this->data), 1);
+				_MHnt_	low  = opCode(extractf128_si256, opCode(castps_si256, this->data), 0);
+				return	opCode(insertf128_ps, opCode(castps128_ps256, opCodl(srli_epi32, low, i)), opCodl(srli_epi32, high, i), 1);
+				#else
+				return	opCode(castsi256_ps, opCode(slli_epi32, opCode(castps_si256, this->data), i));
+				#endif
+			}
+
+			/*	Global shift, only required for the vectorized RNG for single precision, these functions don't exists in double precision	*/
+			inline	Simd_f	grShift(uint i) {
+				#ifndef	__AVX2__
+				_MHnt_	high = opCode(extractf128_si256, opCode(castps_si256, this->data), 1);
+				_MHnt_	low  = opCode(extractf128_si256, opCode(castps_si256, this->data), 0);
+				return	opCode(insertf128_ps, opCode(castps128_ps256, opCodl(srli_si128, low, i)), opCodl(srli_si128, high, i), 1);
+				#else
+				return	opCode(castsi256_ps, opCode(bsrli_epi128, opCode(castps_si256, this->data), i));
+				#endif
+			}
+
+			inline	Simd_f	glShift(uint i) {
+				#ifndef	__AVX2__
+				_MHnt_	high = opCode(extractf128_si256, opCode(castps_si256, this->data), 1);
+				_MHnt_	low  = opCode(extractf128_si256, opCode(castps_si256, this->data), 0);
+				return	opCode(insertf128_ps, opCode(castps128_ps256, opCodl(slli_si128, low, i)), opCodl(slli_si128, high, i), 1);
+				#else
+				return	opCode(castsi256_ps, opCode(bslli_epi128, opCode(castps_si256, this->data), i));
+				#endif
+			}
+
+			inline	Simd_f	&operator&=(const Simd_f &x) {
+				(*this) = (*this)&x;
+				return	(*this);
+			}
+
+			inline	Simd_f	&operator|=(const Simd_f &x) {
+				(*this) = (*this)|x;
+				return	(*this);
+			}
+
+			inline	Simd_f	&operator^=(const Simd_f &x) {
+				(*this) = (*this)^x;
+				return	(*this);
+			}
+
+			inline	Simd_f	&operator>>=(uint i) {
+				(*this) = (*this)>>i;
+				return	(*this);
+			}
+
+			inline	Simd_f	&operator<<=(uint i) {
+				(*this) = (*this)<<i;
+				return	(*this);
+			}
+
 			inline	Mask_f	operator>(const Simd_f &b) {
 				return	opCode(castps_si256, opCode(cmp_ps, this->data, b.data, _CMP_GT_OQ));
 			}
@@ -245,10 +327,11 @@
 				return	opCode(permute_ps, this->data, 0b10110001);
 			}
 
-			inline	void	SetRandom () {
-				(*this) = Simd_f(Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(),
-						 Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand());
+			inline	Simd_f	rPermute () {
+				return	opCode(permute_ps, this->data, 0b00011011);
 			}
+
+			inline	void	SetRandom ();
 
 			inline	float	Sum () {
 				return	opCode(hadd_ps,
@@ -268,6 +351,10 @@
 				return	data;
 			}
 
+			void	iPrint(const char *str)	{
+				printuVar(opCode(castps_si256, this->data), str);
+			}
+
 			void	Print(const char *str)	{
 				printsVar(this->data, str);
 			}
@@ -279,8 +366,8 @@
 			friend  Simd_f  sin     (const Simd_f&);
 			friend  Simd_f  log     (const Simd_f&);
 			friend  Simd_f  exp     (const Simd_f&);
-			friend  Simd_f  log2	(const Simd_f&);
-			friend  Simd_f  exp2	(const Simd_f&);
+//			friend  Simd_f  log2	(const Simd_f&);
+//			friend  Simd_f  exp2	(const Simd_f&);
 			friend  Simd_f  abs     (const Simd_f&);
 		};
 
@@ -290,11 +377,11 @@
 		Simd_f	log	(const Simd_f&);
 		Simd_f	exp	(const Simd_f&);
 		Simd_f	abs	(const Simd_f&);
-		Simd_f  log2	(const Simd_f&);
-		Simd_f  exp2	(const Simd_f&);
+//		Simd_f  log2	(const Simd_f&);
+//		Simd_f  exp2	(const Simd_f&);
 
 		class	Mask_d	{
-                	static constexpr size_t nData = sAlign/sizeof(double);
+                	static constexpr size_t sWide = sAlign/sizeof(double);
 
 			private:
 
@@ -355,7 +442,7 @@
 
 			public:
 
-                	static constexpr size_t nData = sAlign/sizeof(double);
+                	static constexpr size_t sWide = sAlign/sizeof(double);
                 	static constexpr size_t xWide = 1;
                 	static constexpr size_t yWide = 1;
                 	static constexpr size_t zWide = 2;
@@ -370,6 +457,10 @@
 
 				Simd_d(double x0, double x1, double x2, double x3) {
 				data = opCode(set_pd, x3, x2, x1, x0);
+			}
+
+				Simd_d(uint64 x0, uint64 x1) {
+				data = opCode(castsi256_pd, opCode(set_epi64x, x1, x0, x1, x0));
 			}
 
 				Simd_d(double x0) {
@@ -459,6 +550,63 @@
 				return	opCode(and_pd, this->data, opCode(castsi256_pd, msk.data));
 			}
 
+			inline	Simd_d	operator&(const Simd_d &b) {
+				return	opCode(and_pd, this->data, b.data);
+			}
+
+			inline	Simd_d	operator|(const Simd_d &b) {
+				return	opCode(or_pd,  this->data, b.data);
+			}
+
+			inline	Simd_d	operator^(const Simd_d &b) {
+				return	opCode(xor_pd, this->data, b.data);
+			}
+
+			inline	Simd_d	operator>>(uint i) {
+				#ifndef	__AVX2__
+				_MHnt_	high = opCode(extractf128_si256, opCode(castpd_si256, this->data), 1);
+				_MHnt_	low  = opCode(extractf128_si256, opCode(castpd_si256, this->data), 0);
+				return	opCode(insertf128_ps, opCode(castps128_ps256, opCodl(srli_epi64, low, i)), opCodl(srli_epi64, high, i), 1);
+				#else
+				return	opCode(castsi256_pd, opCode(srli_epi64, opCode(castpd_si256, this->data), i));
+				#endif
+			}
+
+			inline	Simd_d	operator<<(uint i) {
+				#ifndef	__AVX2__
+				_MHnt_	high = opCode(extractf128_si256, opCode(castpd_si256, this->data), 1);
+				_MHnt_	low  = opCode(extractf128_si256, opCode(castpd_si256, this->data), 0);
+				return	opCode(insertf128_ps, opCode(castps128_ps256, opCodl(slli_epi64, low, i)), opCodl(slli_epi64, high, i), 1);
+				#else
+				return	opCode(castsi256_pd, opCode(slli_epi64, opCode(castpd_si256, this->data), i));
+				#endif
+			}
+
+			inline	Simd_d	&operator&=(const Simd_d &x) {
+				(*this) = (*this)&x;
+				return	(*this);
+			}
+
+			inline	Simd_d	&operator|=(const Simd_d &x) {
+				(*this) = (*this)|x;
+				return	(*this);
+			}
+
+			inline	Simd_d	&operator^=(const Simd_d &x) {
+				(*this) = (*this)^x;
+				return	(*this);
+			}
+
+			inline	Simd_d	&operator>>=(uint i) {
+				(*this) = (*this)>>i;
+				return	(*this);
+			}
+
+			inline	Simd_d	&operator<<=(uint i) {
+				(*this) = (*this)<<i;
+				return	(*this);
+			}
+
 			inline	Mask_d	operator>(const Simd_d &b) {
 				return	opCode(castpd_si256, opCode(cmp_pd, this->data, b.data, _CMP_GT_OQ));
 			}
@@ -503,9 +651,14 @@
 				return	opCode(permute_pd, this->data, 0b00000101);
 			}
 
-			inline	void	SetRandom () {
-				(*this) = Simd_d(Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand());
+			inline	Simd_d	rPermute () {
+				return	opCode(castps_pd, opCode(permute_ps, opCode(castpd_ps, this->data), 0b00011011));
 			}
+
+			inline	void	SetRandom ();
+// {
+//				(*this) = Simd_d(Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand());
+//			}
 
 			inline	double	Sum () {
 				return	opCode(hadd_pd,
@@ -534,8 +687,8 @@
 			friend  Simd_d  sin	(const Simd_d&);
 			friend  Simd_d  log	(const Simd_d&);
 			friend  Simd_d  exp	(const Simd_d&);
-			friend  Simd_d  log2	(const Simd_d&);
-			friend  Simd_d  exp2	(const Simd_d&);
+//			friend  Simd_d  log2	(const Simd_d&);
+//			friend  Simd_d  exp2	(const Simd_d&);
 			friend  Simd_d  abs	(const Simd_d&);
 		};
 
@@ -545,7 +698,7 @@
 		Simd_d	log	(const Simd_d&);
 		Simd_d	exp	(const Simd_d&);
 		Simd_d	abs	(const Simd_d&);
-		Simd_d  log2	(const Simd_d&);
-		Simd_d  exp2	(const Simd_d&);
+//		Simd_d  log2	(const Simd_d&);
+//		Simd_d  exp2	(const Simd_d&);
 	}
 #endif

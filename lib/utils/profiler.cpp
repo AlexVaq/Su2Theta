@@ -24,7 +24,7 @@ namespace Su2Prof {
 
 			aTime += fCount.DTime();
 
-			LogMsg (VerbSilent, "\tFunction %-24s\tGFlops %.3lf\tGBytes %.3lf\tTotal time %.2lfs (%.2lf\%)", name.c_str(), fCount.GFlops(), fCount.GBytes(), fCount.DTime(), 100.*fCount.DTime()/tTime);
+			LogMsg (VerbSilent, "\tFunction %-30s\tGFlops %.3lf\tGBytes %.3lf\tTotal time %.2lfs (%.2lf\%)", name.c_str(), fCount.GFlops(), fCount.GBytes(), fCount.DTime(), 100.*fCount.DTime()/tTime);
         	}
 
 		return	aTime;

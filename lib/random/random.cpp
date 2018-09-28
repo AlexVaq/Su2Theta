@@ -45,11 +45,21 @@ namespace	Su2Rand {
 	}
 
 	template<>
+	float	vGenRand<float>() {
+		return	(*myRNG)();
+	}
+
+	template<>
+	double	vGenRand<double>() {
+		return	(*myRNG)();
+	}
+
+	template<>
 	Simd::Simd_f	genVRand<Simd::Simd_f>() {
-		float in[Simd::Simd_f::nData];
+		float in[Simd::Simd_f::sWide];
 
 		#pragma unroll
-		for (int i=0; i<Simd::Simd_f::nData; i++)
+		for (int i=0; i<Simd::Simd_f::sWide; i++)
 			in[i] = genRand();
 
 		return	Simd::Simd_f(in);
@@ -57,10 +67,10 @@ namespace	Su2Rand {
 
 	template<>
 	Simd::Simd_d	genVRand<Simd::Simd_d>() {
-		double in[Simd::Simd_d::nData];
+		double in[Simd::Simd_d::sWide];
 
 		#pragma unroll
-		for (int i=0; i<Simd::Simd_d::nData; i++)
+		for (int i=0; i<Simd::Simd_d::sWide; i++)
 			in[i] = genRand();
 
 		return	Simd::Simd_d(in);
