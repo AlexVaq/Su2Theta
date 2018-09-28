@@ -498,7 +498,7 @@ inline void printlVar(_MInt_ d, const char *name)
 	opCode(store_si128, ((_MInt_ *)r), d);
 	for (int i=0; i<2; i++)
 #endif
-		printf(" %zd", r[i]);
+		printf(" %zu", r[i]);
 	printf("\n");
 }
 

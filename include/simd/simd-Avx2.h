@@ -676,6 +676,10 @@
 				return	data;
 			}
 
+			void	iPrint(const char *str)	{
+				printlVar(opCode(castpd_si256, this->data), str);
+			}
+
 			void	Print(const char *str)	{
 				printdVar(this->data, str);
 			}

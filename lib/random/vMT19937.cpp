@@ -1,3 +1,14 @@
+/*
+	Vectorized Mersenne-Twister. Code taken from Mutsuo
+	Saito and Makoto Matsumoto webpage (dSFMT package
+	v2.2.3 and SFMT package v1.5.1)	and adapted to AVX,
+	AVX-2 and AVX-512. Tested against the original code,
+	reproducing the same random numbers.
+
+	sFMT is used for single precision, whereas dSFMT is
+	used for double precision.
+*/
+
 #include <vector>
 #include <random>
 #include <memory>
@@ -44,7 +55,7 @@ namespace	Su2Rand {
 
 		uint	*iState  = static_cast<uint  *>  (static_cast<void*>(state));
 
-		iState[0] = seed;
+		iState[0] = 1234;//seed;
 		iState[1] = mtInit * (iState[0]^(iState[0] >> 30)) + 1;
 		iState[2] = mtInit * (iState[1]^(iState[1] >> 30)) + 2;
 		iState[3] = mtInit * (iState[2]^(iState[2] >> 30)) + 3;
@@ -91,25 +102,31 @@ namespace	Su2Rand {
 
 		iState[0] = seed;
 		iState[1] = mtInit * (iState[0]^(iState[0] >> 30)) + 1;
+		iState[2] = mtInit * (iState[1]^(iState[1] >> 30)) + 2;
+		iState[3] = mtInit * (iState[2]^(iState[2] >> 30)) + 3;
 
-		for (int i=2; i<Simd_d::sWide; i+=2) {
+		for (int i=4; i<Simd_d::sWide*2; i+=4) {
 			iState[i+0] = ((104729 + iState[i-2])*691) % 179426549;
-			iState[i+1] = mtInit * (iState[i]^(iState[i] >> 30)) + 1;
+			iState[i+1] = mtInit  * (iState[i+0]^(iState[i+0] >> 30)) + 1;
+			iState[i+2] = mtInit  * (iState[i+1]^(iState[i+1] >> 30)) + 2;
+			iState[i+3] = mtInit  * (iState[i+2]^(iState[i+2] >> 30)) + 3;
 		}
 
-		for (int i=Simd_d::sWide; i<(mtSize64 + 1)*Simd_d::sWide; i+=Simd_d::sWide)
-			for (int j=0; j<Simd_d::sWide; j+=2) {
-				//iState[i+j+0] = mtInit * (iState[i+j+1-Simd_d::sWide]^(iState[i+j+1-Simd_d::sWide] >> 30)) + (i<<1)/Simd_d::sWide + (j%2);
-				iState[i+j+0] = mtInit * (iState[i+j+3-Simd_d::sWide]^(iState[i+j+3-Simd_d::sWide] >> 30)) + (i<<2)/Simd_d::sWide;
-				iState[i+j+1] = mtInit * (iState[i+j+0]^(iState[i+j+0] >> 30)) + (i<<1)/Simd_d::sWide + 1;
+		for (int i=Simd_d::sWide*2; i<(mtSize64 + 1)*Simd_d::sWide*2; i+=Simd_d::sWide*2)
+			for (int j=0; j<Simd_d::sWide*2; j+=4) {
+				iState[i+j+0] = mtInit * (iState[i+j+3-Simd_d::sWide*2]^(iState[i+j+3-Simd_d::sWide*2] >> 30)) + (i<<2)/(Simd_d::sWide*2);
+				iState[i+j+1] = mtInit * (iState[i+j+0]^(iState[i+j+0] >> 30)) + (i<<2)/(Simd_d::sWide*2) + 1;
+				iState[i+j+2] = mtInit * (iState[i+j+1]^(iState[i+j+1] >> 30)) + (i<<2)/(Simd_d::sWide*2) + 2;
+				iState[i+j+3] = mtInit * (iState[i+j+2]^(iState[i+j+2] >> 30)) + (i<<2)/(Simd_d::sWide*2) + 3;
 			}
 
 		for (int i=0; i<mtSize64*Simd_d::sWide; i++)
 			iSta64[i] = (iSta64[i] & mtLowMask64) | mtHighConst64;
 
 		/*	Period certification	*/
+		size_t oBase = mtSize64*Simd_d::sWide;
 		for (int i=0; i<Simd_d::sWide; i+=2) {
-			auto inner = ((iSta64[i] ^ mtFix1) & mtPcd1) ^ ((iSta64[i+1] ^ mtFix2) & mtPcd2);
+			auto inner = ((iSta64[oBase+i] ^ mtFix1) & mtPcd1) ^ ((iSta64[oBase+i+1] ^ mtFix2) & mtPcd2);
 
 			for (int i=32; i>0; i>>=1)
 				inner ^= inner >> i;
@@ -117,7 +134,7 @@ namespace	Su2Rand {
 			inner &= 1;
 
 			if (inner != 1)
-				iSta64[i+1] ^= 1;
+				iSta64[oBase+i+1] ^= 1;
 		}
 
 		idx = mtSize64;
@@ -155,9 +172,11 @@ namespace	Su2Rand {
 			z ^= state[(i+mtPos64)%mtSize64];
 			y ^= z;
 
+			auto w = y & mtMsk64;
+
+			u = y;
 			y >>= mtSr64;
-			state[i] = y ^ x;
-			u = y & mtMsk64;
+			state[i] = (y ^ x) ^ w;
 		}
 
 		state[mtSize64] = u;
