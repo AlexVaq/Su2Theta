@@ -64,15 +64,15 @@
 
 						      auto idx = cPt.Index(myAct.Latt().vLength());
 
-						      switch (cOrd) {
-							case EvenOdd:
+//						      switch (cOrd) {
+//							case EvenOdd:
 							myAct.Latt().Insert(std::forward<T>(myAct(cPt, mu).GenHeat(myAct.Beta())),       idx, mu);
-							break;
+//							break;
 
-							case Colored:
-							myAct.Latt().Insert(std::forward<T>(myAct(cPt, mu).GenHeat(myAct.Beta()*5./3.)), idx, mu);
-							break;
-  						      }
+//							case Colored:
+//							myAct.Latt().Insert(std::forward<T>(myAct(cPt, mu).GenHeat(myAct.Beta()*5./3.)), idx, mu);
+//							break;
+  //						      }
 						    }
 						  }
 						}

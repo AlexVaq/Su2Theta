@@ -90,7 +90,7 @@
 				prof.add(Name(), myGFlops, myGBytes);
 
 				LogMsg  (VerbHigh, "%s reporting %lf GFlops %lf GBytes", Name().c_str(), prof.Prof()[Name()].GFlops(), prof.Prof()[Name()].GBytes());
-				return	plq*0.5/(6.*myLat.Volume());
+				return	plq*cfPlq/(6.*myLat.Volume());
 			}
 
 			void	SaveState()	override	{}

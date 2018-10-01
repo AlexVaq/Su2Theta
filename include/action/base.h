@@ -7,8 +7,9 @@
 
 	namespace Su2Action {
 
-		constexpr double cfWilson   =  0.5;
-		constexpr double cfImproved = -0.025;
+		constexpr double cfPlq     =  0.5;
+		constexpr double cfImpPlq  =  5./3.;
+		constexpr double cfImpRect = -1./12.;
 
 		template<class T, ColorKind cOrd>
 		class	Action  : public Tunable {
@@ -217,7 +218,7 @@
 					}
 				}
 
-				return	(staple + iSp*(cfImproved/cfWilson));
+				return	(cOrd == Colored ? (staple*cfImpPlq + iSp*cfImpRect) : staple);
 			}
 
 			inline double	operator()(Coord<cOrd> mPt) {
@@ -269,7 +270,7 @@
 					}
 				}
 
-				return	(ret*cfWilson + iRt*cfImproved);
+				return	(cOrd == Colored ? (ret*(cfImpPlq*cfPlq) + iRt*(cfImpRect*cfPlq)) : ret*cfPlq);
 			}
 
 			inline double	operator()(size_t mPt) {
