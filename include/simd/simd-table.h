@@ -42,14 +42,22 @@
 #define	M_PI6	(M_PI4*M_PI2)
 /* Only single precision for the moment */
 
+constexpr size_t iSgAd = 0b1000000000000000000000000000000000000000000000000000000000000000;
+constexpr size_t iSgAb = 0b1000000000000000000000000000000010000000000000000000000000000000;
+#ifdef	__AVX512F__
+constexpr _MInt_  iSgnAbsd  = {       iSgAd,       iSgAd,       iSgAd,       iSgAd,       iSgAd,       iSgAd,       iSgAd,       iSgAd };
+constexpr _MInt_  iSgnAbsf  = {       iSgAb,       iSgAb,       iSgAb,       iSgAb,       iSgAb,       iSgAb,       iSgAb,       iSgAb };
+#elif   defined(__AVX__)
+constexpr _MInt_  iSgnAbsd  = {       iSgAd,       iSgAd,       iSgAd,       iSgAd };
+constexpr _MInt_  iSgnAbsf  = {       iSgAb,       iSgAb,       iSgAb,       iSgAb };
+#endif
+
 #ifndef	__INTEL_COMPILER
 
 constexpr double Inf_d = __builtin_inf();
 constexpr double Nan_d = __builtin_nan("");//0xFFFFF");
 
 constexpr size_t m32Mk = 0b0000000000000000000000000001111100000000000000000000000000011111;
-constexpr size_t iSgAb = 0b1000000000000000000000000000000010000000000000000000000000000000;
-constexpr size_t iSgAd = 0b1000000000000000000000000000000000000000000000000000000000000000;
 constexpr size_t iSgMk = 0b1100000000000000000000000000000011000000000000000000000000000000;
 constexpr size_t iFlMk = 0b1111100000000000000000000000000011111000000000000000000000000000;
 
@@ -345,8 +353,6 @@ constexpr _MHnt_  hTwo      = {  8589934594,  8589934594,  8589934594,  85899345
 constexpr _MHnt_  iZerh     = {           0,           0,           0,           0 };
 constexpr _MInt_  m32Mask   = {       m32Mk,       m32Mk,       m32Mk,       m32Mk,       m32Mk,       m32Mk,       m32Mk,       m32Mk };
 constexpr _MInt_  iSignMsk  = {       iSgMk,       iSgMk,       iSgMk,       iSgMk,       iSgMk,       iSgMk,       iSgMk,       iSgMk };
-constexpr _MInt_  iSgnAbsf  = {       iSgAb,       iSgAb,       iSgAb,       iSgAb,       iSgAb,       iSgAb,       iSgAb,       iSgAb };
-constexpr _MInt_  iSgnAbsd  = {       iSgAd,       iSgAd,       iSgAd,       iSgAd,       iSgAd,       iSgAd,       iSgAd,       iSgAd };
 constexpr _MInt_  iFillMsk  = {       iFlMk,       iFlMk,       iFlMk,       iFlMk,       iFlMk,       iFlMk,       iFlMk,       iFlMk };
 constexpr _MHnt_  h32Mask   = {       m32Mk,       m32Mk,       m32Mk,       m32Mk };
 constexpr _MHnt_  hSignMsk  = {       iSgMk,       iSgMk,       iSgMk,       iSgMk };
