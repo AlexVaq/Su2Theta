@@ -5,7 +5,7 @@
 
 	#include "enumFields.h"
 	#include "comms/comms.h"
-	#include "utils/logger.h"
+	#include "utils/utils.h"
 
 	#include "simd/simd.h"
 
@@ -46,7 +46,8 @@
 		class	RNG {
 			private:
 
-			T	state[(mtSize64 + 1)];	// Not a big deal for Simd_f and this way we have a single function
+			//T	*state;	// Not a big deal for Simd_f and this way we have a single function
+			T	state[mtSize64+1]  __attribute__ ((aligned (Simd::sAlign)));
 			int	idx;
 
 			void	initRNG (uint seed);
@@ -54,8 +55,18 @@
 
 			public:
 
-				RNG ()		{ initRNG(0); }
-				RNG (uint seed)	{ initRNG(seed); }
+				RNG ()		{
+//				alignAlloc((void **) &state, Simd::sAlign, (mtSize64+1)*sizeof(T));
+				initRNG(0);
+			}
+				RNG (uint seed)	{
+//				alignAlloc((void **) &state, Simd::sAlign, (mtSize64+1)*sizeof(T));
+				initRNG(seed);
+			}
+
+//				~RNG () {
+//				trackFree(state);
+//			}
 
 			void	Seed(uint seed)	{ initRNG(seed); }
 

@@ -10,7 +10,7 @@
 	#define opCode(x,...) opCode_N(_PREFIX_, x, __VA_ARGS__)
 
 	#include <zmmintrin.h>
-	#include "random/random.h"
+	#include "enumFields.h"
 
 	#define _MData_ __m512
 	#define _MDatd_ __m512d
@@ -28,7 +28,7 @@
 		class	Simd_d;
 
 		class	Mask_f	{
-                	static constexpr size_t nData = sAlign/sizeof(int);
+                	static constexpr size_t sWide = sAlign/sizeof(int);
 
 			private:
 
@@ -85,7 +85,7 @@
 
 			public:
 
-                	static constexpr size_t nData = sAlign/sizeof(float);
+                	static constexpr size_t sWide = sAlign/sizeof(float);
                 	static constexpr size_t xWide = 2;
                 	static constexpr size_t yWide = 2;
                 	static constexpr size_t zWide = 2;
@@ -199,15 +199,15 @@
 			}
 
 			inline	Simd_f	operator&(const Simd_f &b) {
-				return	opCode(and_ps, this->data, b.data);
+				return	opCode(castsi512_ps, opCode(and_si512, opCode(castps_si512, this->data), opCode(castps_si512, b.data)));
 			}
 
 			inline	Simd_f	operator|(const Simd_f &b) {
-				return	opCode(or_ps,  this->data, b.data);
+				return	opCode(castsi512_ps, opCode(or_si512,  opCode(castps_si512, this->data), opCode(castps_si512, b.data)));
 			}
 
 			inline	Simd_f	operator^(const Simd_f &b) {
-				return	opCode(xor_ps, this->data, b.data);
+				return	opCode(castsi512_ps, opCode(xor_si512, opCode(castps_si512, this->data), opCode(castps_si512, b.data)));
 			}
 
 			inline	Simd_f	operator>>(uint i) {
@@ -216,6 +216,26 @@
 
 			inline	Simd_f	operator<<(uint i) {
 				return	opCode(castsi512_ps, opCode(slli_epi32, opCode(castps_si512, this->data), i));
+			}
+
+			inline	Simd_f	grShift(uint i) {
+			#ifdef	__AVX512BW__
+				return	opCode(castsi512_ps, opCode(bsrli_epi128, opCode(castps_si512, this->data), i));
+			#else
+				_MHnt_	low  = opCode(extracti64x4_epi64, this->data, 0);
+				_MHnt_	high = opCode(extracti64x4_epi64, this->data, 1);
+				return	opCode(castsi512_ps, opCode(inserti64x4, opCode(castsi256_si512, opCodl(bsrli_epi128, low, i)), opCodl(bsrli_epi128, high, i), 1));
+			#endif
+			}
+
+			inline	Simd_f	glShift(uint i) {
+			#ifdef	__AVX512BW__
+				return	opCode(castsi512_ps, opCode(bslli_epi128, opCode(castps_si512, this->data), i));
+			#else
+				_MHnt_	low  = opCode(extracti64x4_epi64, this->data, 0);
+				_MHnt_	high = opCode(extracti64x4_epi64, this->data, 1);
+				return	opCode(castsi512_ps, opCode(inserti64x4, opCode(castsi256_si512, opCodl(bslli_epi128, low, i)), opCodl(bslli_epi128, high, i), 1));
+			#endif
 			}
 
 			inline	Simd_f	&operator&=(const Simd_f &x) {
@@ -291,12 +311,12 @@
 				return	opCode(permute_ps, this->data, 0b00011011);
 			}
 
-			inline	void	SetRandom () {
-				(*this) = Simd_f(Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(),
-						 Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(),
-						 Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(),
-						 Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand());
-			}
+			inline	void	SetRandom ();// {
+//				(*this) = Simd_f(Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(),
+//						 Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(),
+////						 Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(),
+//						 Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand());
+//			}
 
 			inline	float	Sum () {
 				return	opCode(reduce_add_ps, (*this).data);
@@ -308,6 +328,10 @@
 
 			inline	_MData_&	raw() {
 				return	data;
+			}
+
+			void	iPrint(const char *str)	{
+				printuVar(opCode(castps_si512, this->data), str);
 			}
 
 			void	Print(const char *str)	{
@@ -332,7 +356,7 @@
 		Simd_f	abs	(const Simd_f&);
 
 		class	Mask_d	{
-                	static constexpr size_t nData = sAlign/sizeof(double);
+                	static constexpr size_t sWide = sAlign/sizeof(double);
 
 			private:
 
@@ -389,7 +413,7 @@
 
 			public:
 
-                	static constexpr size_t nData = sAlign/sizeof(double);
+                	static constexpr size_t sWide = sAlign/sizeof(double);
                 	static constexpr size_t xWide = 1;
                 	static constexpr size_t yWide = 2;
                 	static constexpr size_t zWide = 2;
@@ -498,15 +522,15 @@
 			}
 
 			inline	Simd_d	operator&(const Simd_d &x) {
-				return	opCode(and_pd, this->data, x.data);
+				return	opCode(castsi512_pd, opCode(and_si512, opCode(castpd_si512, this->data), opCode(castpd_si512, x.data)));
 			}
 
 			inline	Simd_d	operator|(const Simd_d &x) {
-				return	opCode(or_pd,  this->data, x.data);
+				return	opCode(castsi512_pd, opCode(or_si512,  opCode(castpd_si512, this->data), opCode(castpd_si512, x.data)));
 			}
 
 			inline	Simd_d	operator^(const Simd_d &x) {
-				return	opCode(xor_pd, this->data, x.data);
+				return	opCode(castsi512_pd, opCode(xor_si512, opCode(castpd_si512, this->data), opCode(castpd_si512, x.data)));
 			}
 
 			inline	Simd_d	operator>>(uint i) {
@@ -590,10 +614,10 @@
 				return	opCode(castps_pd, opCode(permute_ps, opCode(castpd_ps, this->data), 0b00011011));
 			}
 
-			inline	void	SetRandom () {
-				(*this) = Simd_d(Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(),
-						 Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand());
-			}
+			inline	void	SetRandom ();// {
+//				(*this) = Simd_d(Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(),
+//						 Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand(), Su2Rand::genRand());
+//			}
 
 			inline	double	Sum () {
 				return	opCode(reduce_add_pd, (*this).data);
@@ -605,6 +629,10 @@
 
 			inline	_MDatd_&	raw() {
 				return	data;
+			}
+
+			void	iPrint(const char *str)	{
+				printlVar(opCode(castpd_si512, this->data), str);
 			}
 
 			void	Print(const char *str)	{
