@@ -50,6 +50,9 @@ constexpr _MInt_  iSgnAbsf  = {       iSgAb,       iSgAb,       iSgAb,       iSg
 #elif   defined(__AVX__)
 constexpr _MInt_  iSgnAbsd  = {       iSgAd,       iSgAd,       iSgAd,       iSgAd };
 constexpr _MInt_  iSgnAbsf  = {       iSgAb,       iSgAb,       iSgAb,       iSgAb };
+#else
+constexpr _MInt_  iSgnAbsd  = {       iSgAd,       iSgAd };
+constexpr _MInt_  iSgnAbsf  = {       iSgAb,       iSgAb };
 #endif
 
 #ifndef	__INTEL_COMPILER
@@ -421,8 +424,6 @@ constexpr _MHnt_  hOne      = {  4294967297,  4294967297 };
 constexpr _MHnt_  hTwo      = {  8589934594,  8589934594 };
 constexpr _MInt_  m32Mask   = {       m32Mk,       m32Mk,       m32Mk,       m32Mk };
 constexpr _MInt_  iSignMsk  = {       iSgMk,       iSgMk,       iSgMk,       iSgMk };
-constexpr _MInt_  iSgnAbsf  = {       iSgAb,       iSgAb,       iSgAb,       iSgAb };
-constexpr _MInt_  iSgnAbsd  = {       iSgAd,       iSgAd,       iSgAd,       iSgAd };
 constexpr _MInt_  iFillMsk  = {       iFlMk,       iFlMk,       iFlMk,       iFlMk };
 constexpr _MHnt_  h32Mask   = {       m32Mk,       m32Mk };
 constexpr _MHnt_  hSignMsk  = {       iSgMk,       iSgMk };
@@ -481,8 +482,6 @@ constexpr _MInt_  one       = {  4294967297,  4294967297 };
 constexpr _MInt_  two       = {  8589934594,  8589934594 };
 constexpr _MInt_  m32Mask   = {       m32Mk,       m32Mk };
 constexpr _MInt_  iSignMsk  = {       iSgMk,       iSgMk };
-constexpr _MInt_  iSgnAbsf  = {       iSgAb,       iSgAb };
-constexpr _MInt_  iSgnAbsd  = {       iSgAd,       iSgAd };
 constexpr _MInt_  iFillMsk  = {       iFlMk,       iFlMk };
 #endif
 
