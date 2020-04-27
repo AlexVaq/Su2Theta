@@ -17,8 +17,8 @@
 
 using namespace Simd;
 
-constexpr int nTerm  = 0;
-constexpr int nIters = 16;//512;
+constexpr int nTerm  = 128;
+constexpr int nIters = 512;
 constexpr int nOvHB  = 3;
 
 int	main (int argc, char *argv[]) {
@@ -58,7 +58,7 @@ int	main (int argc, char *argv[]) {
 	}
 
 	for	(int i = 0; i<nIters; i++) {
-//		sHB(nOvHB);
+		sHB(nOvHB);
 		sOR();
 
 		sAct = sPq();
@@ -66,10 +66,9 @@ int	main (int argc, char *argv[]) {
 		stdAvg += sAct;
 		stdErr += sAct*sAct;
 
-//		if (!(i%16)) {
+		if (!(i%16)) {
 			printf("%04d\t%.7e\n", i, sAct);
-//		}
-
+		}
 	}
 
 	stop  = std::chrono::high_resolution_clock::now();
@@ -113,7 +112,7 @@ int	main (int argc, char *argv[]) {
 	}
 
 	for	(int i = 0; i<nIters; i++) {
-//		vHB(nOvHB);
+		vHB(nOvHB);
 		vOR();
 
 		sVAct = vPq();
@@ -121,10 +120,9 @@ int	main (int argc, char *argv[]) {
 		avxAvg += sVAct;
 		avxErr += sVAct*sVAct;
 
-	//	if (!(i%16)) {
+		if (!(i%16)) {
 			printf("%04d\t%.7e\n", i, sVAct);
-	//	}
-
+		}
 	}
 
 	stop  = std::chrono::high_resolution_clock::now();

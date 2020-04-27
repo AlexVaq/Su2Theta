@@ -12,8 +12,8 @@
 #include "utils/unfolder.h"
 
 #define	Ordering Colored // EvenOdd
-#define Float    double  // float
-#define vSmd     Simd_d  // Simd_f
+#define Float    float   // float
+#define vSmd     Simd_f  // Simd_f
 using namespace Simd;
 
 int	main (int argc, char *argv[]) {
@@ -35,7 +35,6 @@ int	main (int argc, char *argv[]) {
 	for (size_t i=0; i<myLat->oVol(); i++) {
 		Coord<Ordering> pt (i, myLat->vLength());
 
-		//printf("Index %05zu --> %05zu Col %02d (%02d %02d %02d %02d)\n", i, pt.Index(myLat->vLength()), PointParity(pt,  *myLat), pt.x[0], pt.x[1], pt.x[2], pt.x[3]);
 		if (i != pt.Index(myLat->vLength()))
 			printf("\n\nVAYA CAGADA %zu %zu\n\n", i, pt.Index(myLat->vLength()));
 		fflush(stdout);
@@ -77,7 +76,6 @@ int	main (int argc, char *argv[]) {
 	for (size_t i=0; i<myVLat->oVol(); i++) {
 		Coord<Ordering> pt (i, myVLat->vLength());
 
-		//printf("Index %05zu --> %05zu Cold %02d (%02d %02d %02d %02d)\n", i, pt.Index(myVLat->vLength()), PointParity(pt,  *myVLat), pt.x[0], pt.x[1], pt.x[2], pt.x[3]);
 		if (i != pt.Index(myVLat->vLength()))
 			printf("\n\nVAYA CAGADA %zu %zu\n\n", i, pt.Index(myVLat->vLength()));
 		fflush(stdout);
@@ -97,12 +95,12 @@ int	main (int argc, char *argv[]) {
 
 		if (pt != nt || clp != cln)
 			printf("\n\nVAYA CAGADA (%d %d %d %d) vs (%d %d %d %d)\n\n", pt.x[0], pt.x[1], pt.x[2], pt.x[3], nt.x[0], nt.x[1], nt.x[2], nt.x[3]);
-		//printf("\n\n(%d %d %d %d | %d) vs (%d %d %d %d | %d)\n\n", pt.x[0], pt.x[1], pt.x[2], pt.x[3], clp, nt.x[0], nt.x[1], nt.x[2], nt.x[3], cln);
 		fflush(stdout);
 	      }
 	    }
 	  }
 	}
+
 	printf("Done\n");
 	auto sVAct = wVAction.allPts();
 
@@ -116,20 +114,9 @@ int	main (int argc, char *argv[]) {
 	auto sUAct = wUAction.allPts();
 
 	printf("Unfold Plaquette value: %le\n", sUAct/(6.*myULat.Volume()));
-/*
-	double	acc = 0.;
-	for (size_t i=0; i<myVLat->oVol(); i++) {
-		for (size_t j=0; j<4; j++) {
-			auto stp = wVAction(i,j);
-			auto lnk = myVLat->Data(i,j);
-			acc += (lnk*stp).SuperTrace();
-		}
-	}
 
-	printf("Acc %le\n", acc/(72.*myVLat->Volume()));
-*/
 	delete myVLat;
-/*
+
 	Lattice<vSu2<vSmd>> *myDLat = new Lattice<vSu2<vSmd>>(16, 16);
 	myDLat->SetRand();
 
@@ -154,6 +141,6 @@ int	main (int argc, char *argv[]) {
 	printf("Plaquette value: %le\n", sUAct/(6.*mySLat.Volume()));
 
 	delete	myDLat;
-*/
+
 	endSu2  ();
 }
