@@ -4,7 +4,7 @@
 	#include <enumFields.h>
 	#include "utils/utils.h"
 	#include "simd/simd.h"
-#define	Lexi
+//#define	Lexi
 	using namespace Su2Enum;
 
 	struct	Point {

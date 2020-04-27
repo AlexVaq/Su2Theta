@@ -56,6 +56,13 @@
 			a[3].Stream(out+3*sWide);
 		}
 
+		void	StreamMask(Mask msk, const vSu2 &in, sData * __restrict__ out) {
+			a[0].StreamMask(msk, in.a[0], out);
+			a[1].StreamMask(msk, in.a[1], out+1*sWide);
+			a[2].StreamMask(msk, in.a[2], out+2*sWide);
+			a[3].StreamMask(msk, in.a[3], out+3*sWide);
+		}
+
 		vFloat	operator% (const vSu2 &b) {
 			return	a[0]*b.a[0] - a[1]*b.a[1] - a[2]*b.a[2] - a[3]*b.a[3];
 		}

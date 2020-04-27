@@ -43,6 +43,11 @@
 			std::copy(a, a+4, out);
 		}
 
+		void	StreamMask(Mask msk, const Su2 &b, sData * __restrict__ out) {
+			if (msk)
+				std::copy(a, a+4, out);
+		}
+
 		sData	operator% (const Su2 &b) {
 			return	a[0]*b.a[0] - a[1]*b.a[1] - a[2]*b.a[2] - a[3]*b.a[3];
 		}

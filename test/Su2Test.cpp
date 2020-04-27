@@ -12,21 +12,22 @@
 #include "utils/unfolder.h"
 
 #define	Ordering Colored // EvenOdd
-
+#define Float    double  // float
+#define vSmd     Simd_d  // Simd_f
 using namespace Simd;
 
 int	main (int argc, char *argv[]) {
 	initSu2 (argc, argv);
 
-	Lattice<Su2<float>,Ordering> *myLat = new Lattice<Su2<float>,Ordering>(16, 16);
+	Lattice<Su2<Float>,Ordering> *myLat = new Lattice<Su2<Float>,Ordering>(16, 16);
 	myLat->SetRand();
 
-	Su2Action::Action<Su2<float>,Ordering> wAction(*myLat, 2.0, 0.0);
+	Su2Action::Action<Su2<Float>,Ordering> wAction(*myLat, 2.0, 0.0);
 	Su2Tune::Tune(wAction);
 	auto	sAct = wAction.allPts();
 	printf("Plaquette value: %le\n", sAct/(6.*myLat->Volume()));
 
-	Su2Action::Plaquette<Su2<float>,Ordering> wPlq(*myLat);
+	Su2Action::Plaquette<Su2<Float>,Ordering> wPlq(*myLat);
 	Su2Tune::Tune(wPlq);
 	printf("Plaquette value: %le\n", wPlq()/(6.*myLat->Volume()));
 
@@ -49,8 +50,10 @@ int	main (int argc, char *argv[]) {
 		Coord<Ordering> pt (ix, iy, iz, it);
 		auto idx = pt.Index(myLat->vLength());
 		Coord<Ordering> nt (idx, myLat->vLength());
+		auto clp = PointParity(pt, *myLat);
+		auto cln = PointParity(nt, *myLat);
 
-		if (pt != nt)
+		if (pt != nt || clp != cln)
 			printf("\n\nVAYA CAGADA (%d %d %d %d) vs (%d %d %d %d)\n\n", pt.x[0], pt.x[1], pt.x[2], pt.x[3], nt.x[0], nt.x[1], nt.x[2], nt.x[3]);
 		fflush(stdout);
 	      }
@@ -60,13 +63,13 @@ int	main (int argc, char *argv[]) {
 	printf("Done\n");
 	delete myLat;
 
-	Lattice<vSu2<Simd_f>,Ordering> *myVLat = new Lattice<vSu2<Simd_f>,Ordering>(16, 16);
+	Lattice<vSu2<vSmd>,Ordering> *myVLat = new Lattice<vSu2<vSmd>,Ordering>(16, 16);
 	myVLat->SetRand();
 
-	Su2Action::Action<vSu2<Simd_f>,Ordering> wVAction(*myVLat, 2.0, 0.0);
+	Su2Action::Action<vSu2<vSmd>,Ordering> wVAction(*myVLat, 2.0, 0.0);
 	Su2Tune::Tune(wVAction);
 
-	Su2Action::Plaquette<vSu2<Simd_f>,Ordering> wvPlq(*myVLat);
+	Su2Action::Plaquette<vSu2<vSmd>,Ordering> wvPlq(*myVLat);
 	Su2Tune::Tune(wvPlq);
 	printf("Plaquette value: %le\n", wvPlq()/(6.*myVLat->oVol()));
 
@@ -94,7 +97,7 @@ int	main (int argc, char *argv[]) {
 
 		if (pt != nt || clp != cln)
 			printf("\n\nVAYA CAGADA (%d %d %d %d) vs (%d %d %d %d)\n\n", pt.x[0], pt.x[1], pt.x[2], pt.x[3], nt.x[0], nt.x[1], nt.x[2], nt.x[3]);
-		printf("\n\n(%d %d %d %d | %d) vs (%d %d %d %d | %d)\n\n", pt.x[0], pt.x[1], pt.x[2], pt.x[3], clp, nt.x[0], nt.x[1], nt.x[2], nt.x[3], cln);
+		//printf("\n\n(%d %d %d %d | %d) vs (%d %d %d %d | %d)\n\n", pt.x[0], pt.x[1], pt.x[2], pt.x[3], clp, nt.x[0], nt.x[1], nt.x[2], nt.x[3], cln);
 		fflush(stdout);
 	      }
 	    }
@@ -105,16 +108,16 @@ int	main (int argc, char *argv[]) {
 
 	printf("Vector Plaquette value: %le\n", sVAct/(6.*myVLat->Volume()));
 
-	Unfolder<vSu2<Simd_f>,Ordering>	munger(*myVLat);
+	Unfolder<vSu2<vSmd>,Ordering>	munger(*myVLat);
 
-	Lattice<Su2<float>,Ordering> myULat = munger();
+	Lattice<Su2<Float>,Ordering> myULat = munger();
 
-	Su2Action::Action<Su2<float>,Ordering> wUAction(myULat, 2.0, 0.0);
+	Su2Action::Action<Su2<Float>,Ordering> wUAction(myULat, 2.0, 0.0);
 	auto sUAct = wUAction.allPts();
 
 	printf("Unfold Plaquette value: %le\n", sUAct/(6.*myULat.Volume()));
 /*
-	float	acc = 0.;
+	double	acc = 0.;
 	for (size_t i=0; i<myVLat->oVol(); i++) {
 		for (size_t j=0; j<4; j++) {
 			auto stp = wVAction(i,j);
@@ -127,18 +130,18 @@ int	main (int argc, char *argv[]) {
 */
 	delete myVLat;
 /*
-	Lattice<vSu2<Simd_f>> *myDLat = new Lattice<vSu2<Simd_f>>(16, 16);
+	Lattice<vSu2<vSmd>> *myDLat = new Lattice<vSu2<vSmd>>(16, 16);
 	myDLat->SetRand();
 
-	Su2Action::Action<vSu2<Simd_f>> wDAction(*myDLat, 2.0, 0.0, false);
+	Su2Action::Action<vSu2<vSmd>> wDAction(*myDLat, 2.0, 0.0, false);
 	sVAct = wDAction.allPts();
 	printf("Plaquette value: %le\n", sVAct/(6.*myDLat->Volume()));
 
 	Unfolder	dMunger(*myDLat);
 
-	Lattice<Su2<float>> mySLat = dMunger();
+	Lattice<Su2<Float>> mySLat = dMunger();
 
-	Su2Action::Action<Su2<float>> wSAction(mySLat, 2.0, 0.0, false);
+	Su2Action::Action<Su2<Float>> wSAction(mySLat, 2.0, 0.0, false);
 	sUAct = wSAction.allPts();
 	printf("Plaquette value: %le\n", sUAct/(6.*mySLat.Volume()));
 
