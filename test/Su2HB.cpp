@@ -17,9 +17,9 @@
 
 using namespace Simd;
 
-constexpr int nTerm  = 128;
-constexpr int nIters = 512;
-constexpr int nOvHB  = 3;
+constexpr int nTerm  =  64;
+constexpr int nIters = 256;
+constexpr int nOvHB  =   3;
 
 int	main (int argc, char *argv[]) {
 	std::chrono::high_resolution_clock::time_point start, stop;

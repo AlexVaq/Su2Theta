@@ -20,7 +20,6 @@
 				Plaquette(Lattice<T,cOrd> &myLat) : myLat(myLat) {
 				InitBlockSize(myLat.vLength());
 				std::string sName = std::to_string(T::sWide) + std::string(" ") + std::to_string(myLat.SLength()) + std::string("x") + std::to_string(myLat.TLength());
-				//SetName(std::string("Plaquette EO\t")  + sName);
 				SetName  (std::string("Plaquette"));
 				SetColor (std::string(cOrd == Su2Enum::EvenOdd ? "EO" : "P32"));
 				SetPrec  (sizeof(typename T::sData) == 4 ? "float" : "double");

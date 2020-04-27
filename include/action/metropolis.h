@@ -27,13 +27,6 @@
 					SetPrec  (sizeof(typename T::sData) == 4 ? "float" : "double");
 					SetVec   (T::sWide != 1 ? Su2Enum::SystemVec : "None");
 					SetVolume(myAct.Latt().SLength(), myAct.Latt().TLength());
-					/*
-					std::string sName = std::to_string(T::sWide) + std::string(" ") + std::to_string(myAct.Latt().SLength()) + std::string("x") + std::to_string(myAct.Latt().TLength());
-					if (cOrd == Su2Enum::EvenOdd)
-						SetName(std::string("Metro EO \t")  + sName);
-					else
-						SetName(std::string("Metro P32\t") + sName);
-					*/
 			}
 
 			void	operator()(const int nTries = 4)	{

@@ -117,30 +117,5 @@ int	main (int argc, char *argv[]) {
 
 	delete myVLat;
 
-	Lattice<vSu2<vSmd>> *myDLat = new Lattice<vSu2<vSmd>>(16, 16);
-	myDLat->SetRand();
-
-	Su2Action::Action<vSu2<vSmd>> wDAction(*myDLat, 2.0, 0.0, false);
-	sVAct = wDAction.allPts();
-	printf("Plaquette value: %le\n", sVAct/(6.*myDLat->Volume()));
-
-	Unfolder	dMunger(*myDLat);
-
-	Lattice<Su2<Float>> mySLat = dMunger();
-
-	Su2Action::Action<Su2<Float>> wSAction(mySLat, 2.0, 0.0, false);
-	sUAct = wSAction.allPts();
-	printf("Plaquette value: %le\n", sUAct/(6.*mySLat.Volume()));
-
-	Su2Action::OverRelax(wDAction);
-	Su2Action::OverRelax(wSAction);
-
-	sVAct = wDAction.allPts();
-	printf("Plaquette value: %le\n", sVAct/(6.*myDLat->Volume()));
-	sUAct = wSAction.allPts();
-	printf("Plaquette value: %le\n", sUAct/(6.*mySLat.Volume()));
-
-	delete	myDLat;
-
 	endSu2  ();
 }

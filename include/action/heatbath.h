@@ -22,19 +22,12 @@
 				SetPrec  (sizeof(typename T::sData) == 4 ? "float" : "double");
 				SetVec   (T::sWide != 1 ? Su2Enum::SystemVec : "None");
 				SetVolume(myAct.Latt().SLength(), myAct.Latt().TLength());
-				/*
-				std::string sName = std::to_string(T::sWide) + std::string(" ") + std::to_string(myAct.Latt().SLength()) + std::string("x") + std::to_string(myAct.Latt().TLength());
-				if (cOrd == Su2Enum::EvenOdd)
-					SetName(std::string("HeatBath EO\t")  + sName);
-				else
-					SetName(std::string("HeatBath P32\t") + sName);
-				*/
 			}
 
 			void	operator()(const int nSteps = 1)	{
 				Su2Prof::Profiler &prof = Su2Prof::getProfiler(ProfHB);
 				prof.start();
-
+/*
 				int nBt = myAct.Latt().vtLength()/BlockT();
 				int nBz = myAct.Latt().vzLength()/BlockZ();
 				int nBy = myAct.Latt().vyLength()/BlockY();
@@ -51,7 +44,22 @@
 				#define	By	BlockY()
 				#define	Bx	BlockX()
 #endif
+*/
+				/*	Test	*/
+				size_t cVol = myAct.Latt().oVol()/cOrd;
+
 				for (int i=0; i<nSteps; i++)
+				  for (int mu=0; mu<4; mu++)
+				    for (int pty=0; pty<cOrd; pty++) {
+				      #pragma omp parallel for schedule(static)
+				      for (uint idx=0; idx<cVol; idx++) {
+					size_t fIdx = cVol*pty + idx;
+
+					myAct.Latt().Insert(std::forward<T>(myAct(fIdx, mu).GenHeat(myAct.Beta())), fIdx, mu);
+				      }
+				    }
+				/*	End test	*/
+/*				for (int i=0; i<nSteps; i++)
 				  for (int bt=0; bt<nBt; bt++)
 				    for (int bz=0; bz<nBz; bz++)
 				      for (int by=0; by<nBy; by++)
@@ -71,20 +79,13 @@
 
 						      auto idx = cPt.Index(myAct.Latt().vLength());
 
-//						      switch (cOrd) {
-//							case EvenOdd:
-							myAct.Latt().Insert(std::forward<T>(myAct(cPt, mu).GenHeat(myAct.Beta())),       idx, mu);
-//							break;
-
-//							case Colored:
-//							myAct.Latt().Insert(std::forward<T>(myAct(cPt, mu).GenHeat(myAct.Beta()*5./3.)), idx, mu);
-//							break;
-  //						      }
+						      myAct.Latt().Insert(std::forward<T>(myAct(cPt, mu).GenHeat(myAct.Beta())),       idx, mu);
 						    }
 						  }
 						}
 					      }
 					}
+*/
 #ifndef	__INTEL_COMPILER
 				#undef	Bt
 				#undef	Bz
@@ -121,36 +122,44 @@
 				SetPrec  (sizeof(typename T::sData) == 4 ? "float" : "double");
 				SetVec   (T::sWide != 1 ? Su2Enum::SystemVec : "None");
 				SetVolume(myAct.Latt().SLength(), myAct.Latt().TLength());
-				/*
-				std::string sName = std::to_string(T::sWide) + std::string(" ") + std::to_string(myAct.Latt().SLength()) + std::string("x") + std::to_string(myAct.Latt().TLength());
-				if (cOrd == Su2Enum::EvenOdd)
-					SetName(std::string("OverRelax EO\t")  + sName);
-				else
-					SetName(std::string("OverRelax P32\t") + sName);
-				*/
 			}
 
 			void	operator()(const int nSteps = 1) {
 				Su2Prof::Profiler &prof = Su2Prof::getProfiler(ProfOvR);
 				prof.start();
-
-				int nBt = 1;//myAct.Latt().vtLength()/BlockT();
-				int nBz = 1;//myAct.Latt().vzLength()/BlockZ();
-				int nBy = 1;//myAct.Latt().vyLength()/BlockY();
-				int nBx = 1;//myAct.Latt().vxLength()/BlockX();
+/*
+				int nBt = myAct.Latt().vtLength()/BlockT();
+				int nBz = myAct.Latt().vzLength()/BlockZ();
+				int nBy = myAct.Latt().vyLength()/BlockY();
+				int nBx = myAct.Latt().vxLength()/BlockX();
 
 #ifdef	__INTEL_COMPILER
-				const int Bt  = 1;//BlockT();
-				const int Bz  = 1;//BlockZ();
-				const int By  = 1;//BlockY();
-				const int Bx  = 1;//BlockX();
+				const int Bt  = BlockT();
+				const int Bz  = BlockZ();
+				const int By  = BlockY();
+				const int Bx  = BlockX();
 #else
-				#define	Bt	1 //BlockT()
-				#define	Bz	1 //BlockZ()
-				#define	By	1 //BlockY()
-				#define	Bx	1 //BlockX()
+				#define	Bt	BlockT()
+				#define	Bz	BlockZ()
+				#define	By	BlockY()
+				#define	Bx	BlockX()
 #endif
+*/
+				/*	Test	*/
+				size_t cVol = myAct.Latt().oVol()/cOrd;
+
 				for (int i=0; i<nSteps; i++)
+				  for (int mu=0; mu<4; mu++)
+				    for (int pty=0; pty<cOrd; pty++) {
+				      #pragma omp parallel for schedule(static)
+				      for (uint idx=0; idx<cVol; idx++) {
+					size_t fIdx = cVol*pty + idx;
+
+					myAct.Latt().Insert(std::forward<T>(myAct.Latt().Data(fIdx, mu).Reflect(std::forward<T>(myAct(fIdx, mu)))), fIdx, mu);
+				      }
+				    }
+				/*	End test	*/
+/*				for (int i=0; i<nSteps; i++)
 				  for (int bt=0; bt<nBt; bt++)
 				    for (int bz=0; bz<nBz; bz++)
 				      for (int by=0; by<nBy; by++)
@@ -169,29 +178,12 @@
 							continue;
 
 						      myAct.Latt().Insert(std::forward<T>(myAct.Latt().Data(idx, mu).Reflect(std::forward<T>(myAct(cPt, mu)))), idx.idx, mu);
-						    //  auto staple = myAct(cPt, mu);
-						    //  auto link   = myAct.Latt().Data(cPt, mu);
-						    //  auto nLink  = link.Reflect(std::forward<T>(staple));
-						    //  auto diff1  = (staple*(link - nLink)).SuperTrace()*0.5;
-						    //  auto diff2  = myAct.allPts();
-						    //  diff1 = sqrt(diff1*diff1);
-						    //  if (diff1 > 1e-12)
-						    //    printf("CACA %le\n", diff1);
-						    //  //else
-						    //    //printf("%d (%d %d %d %d) %d\n", mu, cPt.x[0], cPt.x[1], cPt.x[2], cPt.x[3], pty);
-						    //  myAct.Latt().Insert(std::forward<T>(nLink), cPt.Index(myAct.Latt().vLength()), mu);
-						    //  diff2 -= myAct.allPts();
-						    //  diff2 = sqrt(diff2*diff2);
-						    //  if (diff2 > 1e-12) {
-						    //    printf("COCO %le vs %le %d/(%d %d %d %d) - %d\n", diff2, diff1, mu, cPt.x[0], cPt.x[1], cPt.x[2], cPt.x[3], cPt.Index(myAct.Latt().vLength()));
-						    //    //auto rLink = nLink - myAct.Latt().Data(cPt, mu);
-						    //    //rLink.Print();
-						    //  }
 						    }
 						  }
 						}
 					      }
 					    }
+*/
 #ifndef	__INTEL_COMPILER
 				#undef	Bt
 				#undef	Bz
