@@ -9,7 +9,7 @@
 	#define opCode_N(x,y,...) opCode_P(x, y, __VA_ARGS__)
 	#define opCode(x,...) opCode_N(_PREFIX_, x, __VA_ARGS__)
 
-	#include <zmmintrin.h>
+	#include <immintrin.h>
 	#include "enumFields.h"
 
 	#define _MData_ __m512
