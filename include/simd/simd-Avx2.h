@@ -510,6 +510,10 @@
 				return	opCode(mul_pd, this->data, x.data);
 			}
 
+			inline	Simd_d	operator*(const double x) {
+				return	(*this)*Simd_d(x);
+			}
+
 			inline	Simd_d	operator/(const Simd_d &x) {
 				return	opCode(div_pd, this->data, x.data);
 			}
@@ -526,6 +530,11 @@
 
 			inline	Simd_d	&operator*=(const Simd_d &x) {
 				(*this) = (*this)*x;
+				return	(*this);
+			}
+
+			inline	Simd_d	&operator*=(const double x) {
+				(*this) = (*this)*Simd_d(x);
 				return	(*this);
 			}
 

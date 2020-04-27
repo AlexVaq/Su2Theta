@@ -22,11 +22,18 @@
 
 				Metropolis(Action<T,cOrd> &myAct) : myAct(myAct) {
 					InitBlockSize(myAct.Latt().vLength());
+					SetName  (std::string("Action"));
+					SetColor (std::string(cOrd == Su2Enum::EvenOdd ? "EO" : "P32"));
+					SetPrec  (sizeof(typename T::sData) == 4 ? "float" : "double");
+					SetVec   (T::sWide != 1 ? Su2Enum::SystemVec : "None");
+					SetVolume(myAct.Latt().SLength(), myAct.Latt().TLength());
+					/*
 					std::string sName = std::to_string(T::sWide) + std::string(" ") + std::to_string(myAct.Latt().SLength()) + std::string("x") + std::to_string(myAct.Latt().TLength());
 					if (cOrd == Su2Enum::EvenOdd)
 						SetName(std::string("Metro EO \t")  + sName);
 					else
 						SetName(std::string("Metro P32\t") + sName);
+					*/
 			}
 
 			void	operator()(const int nTries = 4)	{
@@ -89,15 +96,15 @@
 				double myGFlops = ((cOrd == Colored ? 9728.0 : 1428.0) + 34.0 * nTries) * myAct.Latt().Volume() * 1e-9;
 				double myGBytes = ((cOrd == Colored ?  432.0 :   72.0) +  8.0 * nTries) * myAct.Latt().oVol() * sizeof(T) / 1073741824.0;
 				add(myGFlops, myGBytes); 
-				prof.add(Name(), myGFlops, myGBytes);
+				prof.add(FullName(), myGFlops, myGBytes);
 
-				LogMsg  (VerbHigh, "%s reporting %lf GFlops %lf GBytes", Name().c_str(), prof.Prof()[Name()].GFlops(), prof.Prof()[Name()].GBytes());
+				LogMsg  (VerbHigh, "%s reporting %lf GFlops %lf GBytes", FullName().c_str(), prof.Prof()[FullName()].GFlops(), prof.Prof()[FullName()].GBytes());
 			}
 
 			void	SaveState()	override	{ myAct.Latt().SaveState();    }
 			void	RestoreState()	override	{ myAct.Latt().RestoreState(); }
 			inline	void	Run()	override	{ (*this)(); }
-			inline void	Reset() override	{ Su2Prof::getProfiler(ProfMetro).reset(Name()); }
+			inline void	Reset() override	{ Su2Prof::getProfiler(ProfMetro).reset(FullName()); }
 		};
 	}
 #endif

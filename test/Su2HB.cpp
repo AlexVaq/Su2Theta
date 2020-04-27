@@ -11,6 +11,10 @@
 #include "utils/misc.h"
 #include <chrono>
 
+#define	Float    double  // float
+#define	vFloat   Simd_d  // Simd_f
+#define Ordering Colored // EvenOdd
+
 using namespace Simd;
 
 constexpr int nTerm  = 0;
@@ -23,10 +27,10 @@ int	main (int argc, char *argv[]) {
 
 	initSu2 (argc, argv);
 
-	auto *myLat = new Lattice<Su2<float>,Colored>(16, 16);
+	auto *myLat = new Lattice<Su2<Float>,Ordering>(16, 16);
 	myLat->SetRand();
 
-	Su2Action::Action<Su2<float>,Colored> wAction(*myLat, 2.05, 0.0);
+	Su2Action::Action<Su2<Float>,Ordering> wAction(*myLat, 2.05, 0.0);
 
 	printf("Start tuning\n"); fflush(stdout);
 	Su2Tune::Tune(wAction);
@@ -36,9 +40,9 @@ int	main (int argc, char *argv[]) {
 
 	double	stdAvg = 0., stdErr = 0.;
 
-	auto	sHB = Su2Action::HeatBath <Su2<float>,Colored>(wAction);
-	auto	sOR = Su2Action::OverRelax<Su2<float>,Colored>(wAction);
-	auto	sPq = Su2Action::Plaquette<Su2<float>,Colored>(*myLat);
+	auto	sHB = Su2Action::HeatBath <Su2<Float>,Ordering>(wAction);
+	auto	sOR = Su2Action::OverRelax<Su2<Float>,Ordering>(wAction);
+	auto	sPq = Su2Action::Plaquette<Su2<Float>,Ordering>(*myLat);
 
 	Su2Tune::Tune(sHB);
 	Su2Tune::Tune(sOR);
@@ -54,7 +58,7 @@ int	main (int argc, char *argv[]) {
 	}
 
 	for	(int i = 0; i<nIters; i++) {
-		sHB(nOvHB);
+//		sHB(nOvHB);
 		sOR();
 
 		sAct = sPq();
@@ -80,10 +84,10 @@ int	main (int argc, char *argv[]) {
 	printf("Elapsed time %.3lf ms\n", ((double) stdElapsed.count())/1e6);
 	printf("Final Plaquette: %le +/- %le\n", stdAvg, std::sqrt((stdErr - stdAvg*stdAvg)/((double) (nIters - 1))));
 
-	Lattice<vSu2<Simd_f>,Colored> *myVLat = new Lattice<vSu2<Simd_f>,Colored>(16, 16);
+	Lattice<vSu2<vFloat>,Ordering> *myVLat = new Lattice<vSu2<vFloat>,Ordering>(16, 16);
 	myVLat->SetRand();
 
-	Su2Action::Action<vSu2<Simd_f>,Colored> wVAction(*myVLat, 2.05, 0.0);
+	Su2Action::Action<vSu2<vFloat>,Ordering> wVAction(*myVLat, 2.05, 0.0);
 
 	printf("Start tuning\n"); fflush(stdout);
 	Su2Tune::Tune(wVAction);
@@ -93,9 +97,9 @@ int	main (int argc, char *argv[]) {
 
 	double	avxAvg = 0., avxErr = 0.;
 
-	auto	vHB = Su2Action::HeatBath <vSu2<Simd_f>,Colored>(wVAction);
-	auto	vOR = Su2Action::OverRelax<vSu2<Simd_f>,Colored>(wVAction);
-	auto	vPq = Su2Action::Plaquette<vSu2<Simd_f>,Colored>(*myVLat);
+	auto	vHB = Su2Action::HeatBath <vSu2<vFloat>,Ordering>(wVAction);
+	auto	vOR = Su2Action::OverRelax<vSu2<vFloat>,Ordering>(wVAction);
+	auto	vPq = Su2Action::Plaquette<vSu2<vFloat>,Ordering>(*myVLat);
 
 	Su2Tune::Tune(vHB);
 	Su2Tune::Tune(vOR);
@@ -109,7 +113,7 @@ int	main (int argc, char *argv[]) {
 	}
 
 	for	(int i = 0; i<nIters; i++) {
-		vHB(nOvHB);
+//		vHB(nOvHB);
 		vOR();
 
 		sVAct = vPq();

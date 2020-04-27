@@ -17,11 +17,18 @@
 
 				HeatBath(Action<T, cOrd> &myAct) : myAct(myAct) {
 				InitBlockSize(myAct.Latt().vLength());
+				SetName  (std::string("HeatBath"));
+				SetColor (std::string(cOrd == Su2Enum::EvenOdd ? "EO" : "P32"));
+				SetPrec  (sizeof(typename T::sData) == 4 ? "float" : "double");
+				SetVec   (T::sWide != 1 ? Su2Enum::SystemVec : "None");
+				SetVolume(myAct.Latt().SLength(), myAct.Latt().TLength());
+				/*
 				std::string sName = std::to_string(T::sWide) + std::string(" ") + std::to_string(myAct.Latt().SLength()) + std::string("x") + std::to_string(myAct.Latt().TLength());
 				if (cOrd == Su2Enum::EvenOdd)
 					SetName(std::string("HeatBath EO\t")  + sName);
 				else
 					SetName(std::string("HeatBath P32\t") + sName);
+				*/
 			}
 
 			void	operator()(const int nSteps = 1)	{
@@ -88,15 +95,15 @@
 				double myGFlops = (cOrd == Colored ? 9756.0 : 1500.0) * (myAct.Latt().Volume()* nSteps)*1e-9;
 				double myGBytes = (cOrd == Colored ?  436.0 :   76.0) * (myAct.Latt().oVol()  * nSteps)*sizeof(T)/1073741824.0;
 				add(myGFlops, myGBytes); 
-				prof.add(Name(), myGFlops, myGBytes);
+				prof.add(FullName(), myGFlops, myGBytes);
 
-				LogMsg  (VerbHigh, "%s reporting %lf GFlops %lf GBytes", Name().c_str(), prof.Prof()[Name()].GFlops(), prof.Prof()[Name()].GBytes());
+				LogMsg  (VerbHigh, "%s reporting %lf GFlops %lf GBytes", FullName().c_str(), prof.Prof()[FullName()].GFlops(), prof.Prof()[FullName()].GBytes());
 			}
 
 			void	SaveState()	override	{ myAct.Latt().SaveState();    }
 			void	RestoreState()	override	{ myAct.Latt().RestoreState(); }
 			inline void	Run()	override	{ (*this)(); }
-			inline void	Reset()	override	{ Su2Prof::getProfiler(ProfHB).reset(Name()); }
+			inline void	Reset()	override	{ Su2Prof::getProfiler(ProfHB).reset(FullName()); }
 		};
 
 		template<class T, ColorKind cOrd>
@@ -109,32 +116,39 @@
 
 				OverRelax(Action<T, cOrd> &myAct) : myAct(myAct) {
 				InitBlockSize(myAct.Latt().vLength());
+				SetName  (std::string("OverRelax"));
+				SetColor (std::string(cOrd == Su2Enum::EvenOdd ? "EO" : "P32"));
+				SetPrec  (sizeof(typename T::sData) == 4 ? "float" : "double");
+				SetVec   (T::sWide != 1 ? Su2Enum::SystemVec : "None");
+				SetVolume(myAct.Latt().SLength(), myAct.Latt().TLength());
+				/*
 				std::string sName = std::to_string(T::sWide) + std::string(" ") + std::to_string(myAct.Latt().SLength()) + std::string("x") + std::to_string(myAct.Latt().TLength());
 				if (cOrd == Su2Enum::EvenOdd)
 					SetName(std::string("OverRelax EO\t")  + sName);
 				else
 					SetName(std::string("OverRelax P32\t") + sName);
+				*/
 			}
 
 			void	operator()(const int nSteps = 1) {
 				Su2Prof::Profiler &prof = Su2Prof::getProfiler(ProfOvR);
 				prof.start();
 
-				int nBt = myAct.Latt().vtLength()/BlockT();
-				int nBz = myAct.Latt().vzLength()/BlockZ();
-				int nBy = myAct.Latt().vyLength()/BlockY();
-				int nBx = myAct.Latt().vxLength()/BlockX();
+				int nBt = 1;//myAct.Latt().vtLength()/BlockT();
+				int nBz = 1;//myAct.Latt().vzLength()/BlockZ();
+				int nBy = 1;//myAct.Latt().vyLength()/BlockY();
+				int nBx = 1;//myAct.Latt().vxLength()/BlockX();
 
 #ifdef	__INTEL_COMPILER
-				const int Bt  = BlockT();
-				const int Bz  = BlockZ();
-				const int By  = BlockY();
-				const int Bx  = BlockX();
+				const int Bt  = 1;//BlockT();
+				const int Bz  = 1;//BlockZ();
+				const int By  = 1;//BlockY();
+				const int Bx  = 1;//BlockX();
 #else
-				#define	Bt	BlockT()
-				#define	Bz	BlockZ()
-				#define	By	BlockY()
-				#define	Bx	BlockX()
+				#define	Bt	1 //BlockT()
+				#define	Bz	1 //BlockZ()
+				#define	By	1 //BlockY()
+				#define	Bx	1 //BlockX()
 #endif
 				for (int i=0; i<nSteps; i++)
 				  for (int bt=0; bt<nBt; bt++)
@@ -155,6 +169,24 @@
 							continue;
 
 						      myAct.Latt().Insert(std::forward<T>(myAct.Latt().Data(idx, mu).Reflect(std::forward<T>(myAct(cPt, mu)))), idx.idx, mu);
+						    //  auto staple = myAct(cPt, mu);
+						    //  auto link   = myAct.Latt().Data(cPt, mu);
+						    //  auto nLink  = link.Reflect(std::forward<T>(staple));
+						    //  auto diff1  = (staple*(link - nLink)).SuperTrace()*0.5;
+						    //  auto diff2  = myAct.allPts();
+						    //  diff1 = sqrt(diff1*diff1);
+						    //  if (diff1 > 1e-12)
+						    //    printf("CACA %le\n", diff1);
+						    //  //else
+						    //    //printf("%d (%d %d %d %d) %d\n", mu, cPt.x[0], cPt.x[1], cPt.x[2], cPt.x[3], pty);
+						    //  myAct.Latt().Insert(std::forward<T>(nLink), cPt.Index(myAct.Latt().vLength()), mu);
+						    //  diff2 -= myAct.allPts();
+						    //  diff2 = sqrt(diff2*diff2);
+						    //  if (diff2 > 1e-12) {
+						    //    printf("COCO %le vs %le %d/(%d %d %d %d) - %d\n", diff2, diff1, mu, cPt.x[0], cPt.x[1], cPt.x[2], cPt.x[3], cPt.Index(myAct.Latt().vLength()));
+						    //    //auto rLink = nLink - myAct.Latt().Data(cPt, mu);
+						    //    //rLink.Print();
+						    //  }
 						    }
 						  }
 						}
@@ -170,15 +202,15 @@
 				double myGFlops = (cOrd == Colored ? 9720.0 : 1460.0) * (myAct.Latt().Volume()* nSteps)*1e-9;
 				double myGBytes = (cOrd == Colored ?  440.0 :   80.0) * (myAct.Latt().oVol()  * nSteps)*sizeof(T)/1073741824.0;
 				add(myGFlops, myGBytes); 
-				prof.add(Name(), myGFlops, myGBytes);
+				prof.add(FullName(), myGFlops, myGBytes);
 
-				LogMsg  (VerbHigh, "%s reporting %lf GFlops %lf GBytes", Name().c_str(), prof.Prof()[Name()].GFlops(), prof.Prof()[Name()].GBytes());
+				LogMsg  (VerbHigh, "%s reporting %lf GFlops %lf GBytes", FullName().c_str(), prof.Prof()[FullName()].GFlops(), prof.Prof()[FullName()].GBytes());
 			}
 
 			void	SaveState()	override	{ myAct.Latt().SaveState();    }
 			void	RestoreState()	override	{ myAct.Latt().RestoreState(); }
 			inline void	Run()	override	{ (*this)(); }
-			inline void	Reset()	override	{ Su2Prof::getProfiler(ProfOvR).reset(Name()); }
+			inline void	Reset()	override	{ Su2Prof::getProfiler(ProfOvR).reset(FullName()); }
 		};
 	}
 #endif

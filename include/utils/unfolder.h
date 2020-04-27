@@ -15,8 +15,13 @@
 		typedef typename vT::sClass T;
 
 			Unfolder (Lattice<vT,cOrd> &lat) : vLat(lat) {
-			std::string sName = std::to_string(T::sWide) + std::string(" ") + std::to_string(lat.SLength()) + std::string("x") + std::to_string(lat.TLength());
-			SetName(std::string("Folder EO\t")  + sName);
+			SetName  (std::string("Folder"));
+			SetColor (std::string(cOrd == Su2Enum::EvenOdd ? "EO" : "P32"));
+			SetPrec  (sizeof(typename T::sData) == 4 ? "float" : "double");
+			SetVec   (T::sWide != 1 ? Su2Enum::SystemVec : "None");
+			SetVolume(lat.SLength(), lat.TLength());
+			//std::string sName = std::to_string(T::sWide) + std::string(" ") + std::to_string(lat.SLength()) + std::string("x") + std::to_string(lat.TLength());
+			//SetName(std::string("Folder EO\t")  + sName);
 		}
 
 		Lattice<T,cOrd>	operator()() {
@@ -60,9 +65,9 @@
 			prof.stop();
 			double myGBytes = 8.0 * vLat.oVol() * sizeof(T) / 1073741824.0;
 			add(0., myGBytes); 
-			prof.add(Name(), 0., myGBytes);
+			prof.add(FullName(), 0., myGBytes);
 
-			LogMsg  (VerbHigh, "%s reporting %lf GFlops %lf GBytes", Name().c_str(), prof.Prof()[Name()].GFlops(), prof.Prof()[Name()].GBytes());
+			LogMsg  (VerbHigh, "%s reporting %lf GFlops %lf GBytes", FullName().c_str(), prof.Prof()[FullName()].GFlops(), prof.Prof()[FullName()].GBytes());
 
 			return	sLat;
 		}
@@ -70,6 +75,6 @@
 		void	SaveState()	override	{}
 		void	RestoreState()	override	{}
 		inline void	Run()	override	{ (*this)(); }
-		inline void	Reset() override	{ Su2Prof::getProfiler(ProfFold).reset(Name()); }
+		inline void	Reset() override	{ Su2Prof::getProfiler(ProfFold).reset(FullName()); }
 	};
 #endif

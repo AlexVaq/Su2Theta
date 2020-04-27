@@ -9,6 +9,12 @@
 		protected:
 
 		std::string	name;
+		std::string	color;
+		std::string	prec;
+		std::string	vec;
+
+		unsigned int	Ls;
+		unsigned int	Lt;
 
 		double		gFlops;
 		double		gBytes;
@@ -34,7 +40,7 @@
 		public:
 
 				Tunable() noexcept : gFlops(0.), gBytes(0.), xBlock(0), yBlock(0), zBlock(0), tBlock(0), xBest(0), yBest(0), zBest(0), tBest(0),
-						     isTuned(false), isGpu(false), name("") {}
+						     isTuned(false), isGpu(false), name(""), color(""), prec(""), vec("None"), Ls(0), Lt(0) {}
 
 		inline	double		GFlops () const noexcept { return gFlops; }
 		inline	double		GBytes () const noexcept { return gBytes; }
@@ -60,15 +66,15 @@
 
 		inline	size_t		TotalThreads() const noexcept { return xBlock*yBlock*zBlock*tBlock; }
 
-		inline	unsigned int	SetBlockX (unsigned int bSize) noexcept { xBlock = bSize; }
-		inline	unsigned int	SetBlockY (unsigned int bSize) noexcept { yBlock = bSize; }
-		inline	unsigned int	SetBlockZ (unsigned int bSize) noexcept { zBlock = bSize; }
-		inline	unsigned int	SetBlockT (unsigned int bSize) noexcept { tBlock = bSize; }
+		inline	void		SetBlockX (unsigned int bSize) noexcept { xBlock = bSize; }
+		inline	void		SetBlockY (unsigned int bSize) noexcept { yBlock = bSize; }
+		inline	void		SetBlockZ (unsigned int bSize) noexcept { zBlock = bSize; }
+		inline	void		SetBlockT (unsigned int bSize) noexcept { tBlock = bSize; }
 
 		inline	void		UpdateBestBlock() noexcept { xBest  = xBlock; yBest  = yBlock; zBest  = zBlock; tBest  = tBlock; }
 		inline	void		SetBestBlock()    noexcept { xBlock = xBest;  yBlock = yBest;  zBlock = zBest;  tBlock = tBest;  }
 
-		void		AdvanceBlockSize() noexcept {
+			void		AdvanceBlockSize() noexcept {
 
 			if (isGpu) {
 /*				do {
@@ -124,13 +130,27 @@
 			}
 		}	
 
-		std::string	Name   () const noexcept { return name; }
+		std::string	Name    () const noexcept { return name;  }
+		std::string	Color   () const noexcept { return color; }
+		std::string	Prec    () const noexcept { return prec;  }
+		std::string	Vec     () const noexcept { return vec;   }
+		std::string	FullName() const noexcept { return name + " " + color + " " + vec + " " + prec; }
 
-		void		reset  ()                     { gFlops = 0.; gBytes = 0.; }
-		void		add    (double GF, double GB) { gFlops += GF; gBytes += GB; }
+		unsigned int	SLength () const noexcept { return Ls; }
+		unsigned int	TLength () const noexcept { return Lt; }
 
-		void		SetName   (std::string  newName) { name = newName; }
-		void		SetName   (const char * newName) { name.assign(newName); }
+		void		reset   ()                     { gFlops = 0.; gBytes = 0.; }
+		void		add     (double GF, double GB) { gFlops += GF; gBytes += GB; }
+
+		void		SetName   (std::string  newName) { name  = newName; }
+		void		SetName   (const char * newName) { name.assign(newName);  }
+		void		SetColor  (std::string  newColr) { color = newColr; }
+		void		SetColor  (const char * newColr) { color.assign(newColr); }
+		void		SetPrec   (std::string  newPrec) { prec  = newPrec; }
+		void		SetPrec   (const char * newPrec) { prec.assign(newPrec);  }
+		void		SetVec    (std::string  newVec)  { vec   = newVec;  }
+		void		SetVec    (const char * newVec)  { vec.assign(newVec);    }
+		void		SetVolume (uint nLs, uint nLt)   { Ls = nLs; Lt = nLt; }
 		void		AppendName(std::string  appName) { name += appName; }
 		void		AppendName(const char * appName) { name += std::string(appName); }
 

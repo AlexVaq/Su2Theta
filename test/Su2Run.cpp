@@ -11,10 +11,13 @@
 #include "utils/misc.h"
 #include <chrono>
 
+#define	vSmd Simd_d
+
+
 using namespace Simd;
 
-constexpr int nTerm  = 512;
-constexpr int nIters = 2048;
+constexpr int nTerm  = 1024;
+constexpr int nIters = 32768;
 constexpr int nOvHB  = 3;
 constexpr int nTries = 4;
 
@@ -26,14 +29,13 @@ int	main (int argc, char *argv[]) {
 
 	LogOut("Test plaquette action\n");
 
-	auto *latHB = new Lattice<vSu2<Simd_d>,EvenOdd>(16, 16);
+	auto *latHB = new Lattice<vSu2<vSmd>,EvenOdd>(16, 16);
 	latHB->SetRand();
 
-	auto *latMP = new Lattice<vSu2<Simd_d>,EvenOdd>(*latHB);
+	auto *latMP = new Lattice<vSu2<vSmd>,EvenOdd>(*latHB);
 
-	Su2Action::Action<vSu2<Simd_d>,EvenOdd> wActHB(*latHB, 2.05, 0.0);
-	Su2Action::Action<vSu2<Simd_d>,EvenOdd> wActMP(*latMP, 2.05, 0.0);
-
+	Su2Action::Action<vSu2<vSmd>,EvenOdd> wActHB(*latHB, 2.05, 0.0);
+	Su2Action::Action<vSu2<vSmd>,EvenOdd> wActMP(*latMP, 2.05, 0.0);
 
 	LogOut("Tuning action...\n");
 	Su2Tune::Tune(wActHB);
@@ -47,11 +49,11 @@ int	main (int argc, char *argv[]) {
 	double	hbAvg = 0., hbErr = 0.;
 	double	mpAvg = 0., mpErr = 0.;
 
-	auto	sHB = Su2Action::HeatBath  <vSu2<Simd_d>,EvenOdd>(wActHB);
-	auto	sOR = Su2Action::OverRelax <vSu2<Simd_d>,EvenOdd>(wActHB);
-	auto	sMP = Su2Action::Metropolis<vSu2<Simd_d>,EvenOdd>(wActMP);
-	auto	sPH = Su2Action::Plaquette <vSu2<Simd_d>,EvenOdd>(*latHB);
-	auto	sPM = Su2Action::Plaquette <vSu2<Simd_d>,EvenOdd>(*latMP);
+	auto	sHB = Su2Action::HeatBath  <vSu2<vSmd>,EvenOdd>(wActHB);
+	auto	sOR = Su2Action::OverRelax <vSu2<vSmd>,EvenOdd>(wActHB);
+	auto	sMP = Su2Action::Metropolis<vSu2<vSmd>,EvenOdd>(wActMP);
+	auto	sPH = Su2Action::Plaquette <vSu2<vSmd>,EvenOdd>(*latHB);
+	auto	sPM = Su2Action::Plaquette <vSu2<vSmd>,EvenOdd>(*latMP);
 
 	LogOut("\nTuning HeatBath...\n");
 	Su2Tune::Tune(sHB);
@@ -71,7 +73,7 @@ int	main (int argc, char *argv[]) {
 	LogOut("\nTermalizing...\n\n");
 	start = std::chrono::high_resolution_clock::now();
 
-	for	(int i = 0; i<nTerm; i++) {
+	for	(int i=0; i<nTerm; i++) {
 		sHB(nOvHB);
 		sOR();
 		sMP(nTries);
@@ -83,7 +85,7 @@ int	main (int argc, char *argv[]) {
 	LogOut("\nTermalization completed\n");
 	LogOut("\nPlaquette value: HB: %le\tMP: %le\n\n", plqHB, plqMP);
 
-	for	(int i = 0; i<nIters; i++) {
+	for	(int i=0; i<nIters; i++) {
 		sHB(nOvHB);
 		sOR();
 		sMP(nTries);
@@ -97,7 +99,8 @@ int	main (int argc, char *argv[]) {
 		mpAvg += plqMP;
 		mpErr += plqMP*plqMP;
 
-		LogOut("%04d\t%.7e\t%.7e\n", i, plqHB, plqMP);
+		if (i % 512 == 0)
+			LogOut("%04d\t%.7e\t%.7e\n", i, hbAvg/((double) i+1), mpAvg/((double) i+1));
 	}
 
 	stop  = std::chrono::high_resolution_clock::now();
@@ -116,13 +119,13 @@ int	main (int argc, char *argv[]) {
 
 	LogOut("\n\nTest improved action\n");
 
-	auto *iLatHB = new Lattice<vSu2<Simd_d>,Colored>(16, 16);
+	auto *iLatHB = new Lattice<vSu2<vSmd>,Colored>(16, 16);
 	iLatHB->SetRand();
 
-	auto *iLatMP = new Lattice<vSu2<Simd_d>,Colored>(*iLatHB);
+	auto *iLatMP = new Lattice<vSu2<vSmd>,Colored>(*iLatHB);
 
-	Su2Action::Action<vSu2<Simd_d>,Colored> iActHB(*iLatHB, 2.05, 0.0);
-	Su2Action::Action<vSu2<Simd_d>,Colored> iActMP(*iLatMP, 2.05, 0.0);
+	Su2Action::Action<vSu2<vSmd>,Colored> iActHB(*iLatHB, 1.23, 0.0);
+	Su2Action::Action<vSu2<vSmd>,Colored> iActMP(*iLatMP, 1.23, 0.0);
 
 	LogOut("Tuning action...\n");
 	Su2Tune::Tune(iActHB);
@@ -136,11 +139,11 @@ int	main (int argc, char *argv[]) {
 	hbAvg = 0., hbErr = 0.;
 	mpAvg = 0., mpErr = 0.;
 
-	auto	iHB = Su2Action::HeatBath  <vSu2<Simd_d>,Colored>(iActHB);
-	auto	iOR = Su2Action::OverRelax <vSu2<Simd_d>,Colored>(iActHB);
-	auto	iMP = Su2Action::Metropolis<vSu2<Simd_d>,Colored>(iActMP);
-	auto	iPH = Su2Action::Plaquette <vSu2<Simd_d>,Colored>(*iLatHB);
-	auto	iPM = Su2Action::Plaquette <vSu2<Simd_d>,Colored>(*iLatMP);
+	auto	iHB = Su2Action::HeatBath  <vSu2<vSmd>,Colored>(iActHB);
+	auto	iOR = Su2Action::OverRelax <vSu2<vSmd>,Colored>(iActHB);
+	auto	iMP = Su2Action::Metropolis<vSu2<vSmd>,Colored>(iActMP);
+	auto	iPH = Su2Action::Plaquette <vSu2<vSmd>,Colored>(*iLatHB);
+	auto	iPM = Su2Action::Plaquette <vSu2<vSmd>,Colored>(*iLatMP);
 
 	LogOut("\nTuning HeatBath...\n");
 	Su2Tune::Tune(iHB);
@@ -160,7 +163,7 @@ int	main (int argc, char *argv[]) {
 	LogOut("\nTermalizing...\n\n");
 	start = std::chrono::high_resolution_clock::now();
 
-	for	(int i = 0; i<nTerm; i++) {
+	for	(int i=0; i<nTerm; i++) {
 		iHB(nOvHB);
 		iOR();
 		iMP(nTries);
@@ -172,7 +175,7 @@ int	main (int argc, char *argv[]) {
 	LogOut("\nTermalization completed\n");
 	LogOut("\nPlaquette value: HB: %le\tMP: %le\n\n", plqHB, plqMP);
 
-	for	(int i = 0; i<nIters; i++) {
+	for	(int i=0; i<nIters; i++) {
 		iHB(nOvHB);
 		iOR();
 		iMP(nTries);
@@ -186,7 +189,8 @@ int	main (int argc, char *argv[]) {
 		mpAvg += plqMP;
 		mpErr += plqMP*plqMP;
 
-		LogOut("%04d\t%.7e\t%.7e\n", i, plqHB, plqMP);
+		if (i % 512 == 0)
+			LogOut("%04d\t%.7e\t%.7e\t%.7e\n", i, plqHB, plqMP, iActHB.allPts()/(6.*iLatHB->Volume()), iActMP.allPts()/(6.*iLatMP->Volume()));
 	}
 
 	stop  = std::chrono::high_resolution_clock::now();
@@ -199,6 +203,8 @@ int	main (int argc, char *argv[]) {
 	LogOut("Elapsed time %.3lf ms\n", ((double) stdElapsed.count())/1e6);
 	LogOut("Final Plaquette HB: %le +/- %le\n", hbAvg, std::sqrt((hbErr - hbAvg*hbAvg)/((double) (nIters - 1))));
 	LogOut("Final Plaquette MP: %le +/- %le\n", mpAvg, std::sqrt((mpErr - mpAvg*mpAvg)/((double) (nIters - 1))));
+	LogOut("Final Action HB:    %le\n", iActHB.allPts());
+	LogOut("Final Action MP:    %le\n", iActMP.allPts());
 
 	delete	iLatHB;
 	delete	iLatMP;

@@ -1,12 +1,23 @@
 #ifndef __ENUM_FIELDS
 	#define __ENUM_FIELDS
 	#include <cstdint>
+	#include <string>
 	#include <mpi.h>
 
 	typedef	unsigned int	uint;
 	typedef	uint64_t	uint64;
 
 	namespace	Su2Enum {
+
+		#if   defined __AVX512F__
+		const std::string SystemVec{"Avx512"};
+		#elif defined __AVX2__
+		const std::string SystemVec{"Avx2"};
+		#elif defined __AVX__
+		const std::string SystemVec{"Avx"};
+		#else
+		const std::string SystemVec{"Sse4"};
+		#endif
 
 		typedef	enum	Device_s {
 			DeviceCpu,

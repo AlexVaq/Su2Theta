@@ -11,16 +11,12 @@
 			Su2Prof::Profiler &prof = Su2Prof::getProfiler(ProfTuner);
 			prof.start();
 
-			int  nThreads = 1;
 			bool newFile  = false, found = false;
-
-//Profiler &prof = getProfiler(PROF_TUNER);
 
 			std::chrono::high_resolution_clock::time_point start, end;
 			size_t bestTime, lastTime, cTime;
 
 			LogMsg (VerbHigh, "Started tuner");
-//prof.start();
 
 			//if (field->Device() == DEV_CPU)
 				func.ResetBlockSize();
@@ -38,18 +34,23 @@
 					newFile = true;
 				} else {
 				        size_t		rMpi, rThreads, rLs, rLt;
-				        unsigned int	rBx, rBy, rBz, rBt, fType, sWth;//, myField = (field->Field() == FIELD_SAXION) ? 0 : 1;
-				        char		mDev[8], mFunc[256], mSize[16], mCol[16];
+				        unsigned int	rBx, rBy, rBz, rBt, fType;//, myField = (field->Field() == FIELD_SAXION) ? 0 : 1;
+				        char		mFunc[256], mCol[16], sWth[16], mPrec[16], mDev[8];
 
 					std::string tDev("Cpu");//field->Device() == DEV_GPU ? "Gpu" : "Cpu");
 
 					do {
-						fscanf (cacheFile, "%s %s %lu %s %s %lu %lu %u %u %u %u %u\n", &mFunc, &mCol, &sWth, &mSize, &mDev, &rMpi, &rThreads, &fType, &rBx, &rBy, &rBz, &rBt);
+						fscanf (cacheFile, "%s %s %s %s %zu %zu %s %zu %zu %u %u %u %u %u\n", &mFunc, &mCol, &sWth, &mPrec, &rLs, &rLt, &mDev, &rMpi, &rThreads, &fType, &rBx, &rBy, &rBz, &rBt);
+						std::string fCol (mCol);
+						std::string fPrec(mPrec);
 						std::string fDev (mDev);
+						std::string fVec (sWth);
 						std::string nFunc(mFunc);
-						nFunc += std::string(" ") + std::string(mCol) + std::string("\t") + std::to_string(sWth) + std::string(" ") + std::string(mSize);
+						//nFunc += std::string(" ") + std::string(mCol) + std::string("\t") + std::to_string(sWth) + std::string(" ") + std::string(mSize);
 
-						if (nFunc == func.Name() && rThreads == omp_get_max_threads()) { // && rMpi == commSize() && fDev == tDev) { // && rLs == func.SLength() && rLt == func.TLength()) {
+						//if (nFunc == func.Name() && rThreads == omp_get_max_threads()) { // && rMpi == commSize() && fDev == tDev) { // && rLs == func.SLength() && rLt == func.TLength()) {
+						if (nFunc == func.Name() && rThreads == omp_get_max_threads() && rMpi == 1 && fDev == tDev &&
+						    rLs == func.SLength() && rLt == func.TLength() && fPrec == func.Prec() && fCol == func.Color() && fVec == func.Vec()) {
 							if (rBx <= func.MaxBlockX() && rBy <= func.MaxBlockY() && rBz <= func.MaxBlockZ() && rBt <= func.MaxBlockT()) {
 								found = true;
 								func.SetBlockX(rBx);
@@ -190,13 +191,13 @@
 
 				unsigned int fType = 0; //(field->Field() == FIELD_SAXION) ? 0 : 1;
 				std::string myDev("Cpu");//field->Device() == DEV_GPU ? "Gpu" : "Cpu");
-				fprintf (cacheFile, "%s %s %lu %lu %u %u %u %u %u\n", func.Name().c_str(), myDev.c_str(), 1, omp_get_max_threads(),
-						fType, func.TunedBlockX(), func.TunedBlockY(), func.TunedBlockZ(), func.TunedBlockT());
+				fprintf (cacheFile, "%s %s %s %s %zu %zu %s %zu %zu %u %u %u %u %u\n", func.Name().c_str(), func.Color().c_str(), func.Vec().c_str(), func.Prec().c_str(),
+						func.SLength(), func.TLength(), myDev.c_str(), 1, omp_get_max_threads(), fType, func.TunedBlockX(), func.TunedBlockY(), func.TunedBlockZ(), func.TunedBlockT());
 				fclose  (cacheFile);
 			}
 
 			prof.stop();
-			std::string myName = std::string("Tuner ") + func.Name();
+			std::string myName = std::string("Tuner ") + func.FullName();
 			prof.add(myName, 0.0, 0.0);
 
 			LogMsg  (VerbHigh, "%s took %le ns", myName.c_str(), prof.Prof()[myName].DTime());

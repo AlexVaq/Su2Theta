@@ -18,12 +18,12 @@
 
 	template<const ColorKind cOrd>
 	struct	Coord {
-		uint		x[4];
+		int		x[4];
 		Permutation	perm;
 
-		Coord (uint x0, uint x1, uint x2, uint x3, Permutation perm) : x({ x0, x1, x2, x3 }), perm(perm) {}
-		Coord (uint x0, uint x1, uint x2, uint x3) 		     : x({ x0, x1, x2, x3 }), perm(NoPermutation) {}
-		Coord (size_t idx, size_t vL[4])	 		     : perm(NoPermutation) {
+		Coord (int x0, int x1, int x2, int x3, Permutation perm) : x({ x0, x1, x2, x3 }), perm(perm) {}
+		Coord (int x0, int x1, int x2, int x3)			 : x({ x0, x1, x2, x3 }), perm(NoPermutation) {}
+		Coord (size_t idx, size_t vL[4])	 		 : perm(NoPermutation) {
 
 			switch (cOrd) {
 				case EvenOdd: {
@@ -129,6 +129,26 @@
 		inline	Point	IdxPt(size_t vL[4]) {
 			return	Point(Index(vL), perm);
 		}
+
+		bool	operator==(const Coord &oPt) {
+			if (oPt.x[0] != x[0])
+				return false;
+
+			if (oPt.x[1] != x[1])
+				return false;
+
+			if (oPt.x[2] != x[2])
+				return false;
+
+			if (oPt.x[3] != x[3])
+				return false;
+
+			return true;
+		}
+
+		bool	operator!=(const Coord &oPt) {
+			return !((*this)==oPt);
+		}
 	};
 
 	template<class T, ColorKind cOrd = EvenOdd>
@@ -136,7 +156,7 @@
 
 		private:
 
-		size_t		Ls,  Lt;
+		//size_t		Ls,  Lt; Inherited from Tunable
 		size_t		vLx, vLy, vLz, vLt;
 		size_t		vL[4];
 		size_t		sVol,  tVol;
@@ -153,8 +173,9 @@
 
 		public:
 
-			Lattice<T,cOrd> (int Ls, int Lt) : Ls(Ls), Lt(Lt), sVol(Ls*Ls*Ls), tVol(Ls*Ls*Ls*Lt), dSize(sizeof(T)) {
+			Lattice<T,cOrd> (int Ls, int Lt) : sVol(Ls*Ls*Ls), tVol(Ls*Ls*Ls*Lt), dSize(sizeof(T)) {
 
+			SetVolume(Ls, Lt);
 			size_t  dataSize = 4*tVol*dSize/T::sWide;
 
 			#ifndef USE_GPU
@@ -182,11 +203,17 @@
 			vsVol = vLx*vLy*vLz;
 			vtVol = vsVol*vLt;
 
+			SetName  (std::string("LatticeGen"));
+			SetColor (std::string(cOrd == Su2Enum::EvenOdd ? "EO" : "P32"));
+			SetPrec  (sizeof(typename T::sData) == 4 ? "float" : "double");
+			SetVolume(Ls, Lt);
+			/*
 			std::string sName = std::to_string(T::sWide) + std::string(" ") + std::to_string(Ls) + std::string("x") + std::to_string(Lt);
 			if (cOrd == Su2Enum::EvenOdd)
 				SetName(std::string("LatticeGen EO\t")  + sName);
 			else
 				SetName(std::string("LatticeGen P32\t") + sName);
+			*/
 		}
 
 			Lattice<T,cOrd>	(const Lattice<T,cOrd> &myLat) {
@@ -225,7 +252,10 @@
 			vsVol = vLx*vLy*vLz;
 			vtVol = vsVol*vLt;
 
-			SetName(myLat.Name());
+			SetName  (myLat.Name ());
+			SetColor (myLat.Color());
+			SetPrec  (myLat.Prec ());
+			//SetVolume(myLat.SLength(), myLat.TLength());
 		}
 
 			~Lattice<T,cOrd> () {
@@ -263,9 +293,31 @@
 			double myGBytes =  4.0 * vtVol * sizeof(T) / 1073741824.0;
 
 			add(myGFlops, myGBytes); 
-			prof.add(Name(), myGFlops, myGBytes);
+			prof.add(FullName(), myGFlops, myGBytes);
 
-			LogMsg  (VerbHigh, "%s reporting %lf GFlops %lf GBytes", Name().c_str(), prof.Prof()[Name()].GFlops(), prof.Prof()[Name()].GBytes());
+			LogMsg  (VerbHigh, "%s reporting %lf GFlops %lf GBytes", FullName().c_str(), prof.Prof()[FullName()].GFlops(), prof.Prof()[FullName()].GBytes());
+		}
+
+		void	SetConst	() {
+			Su2Prof::Profiler &prof = Su2Prof::getProfiler(ProfGen);
+			prof.start();
+
+			//auto baseMatrix = static_cast<T*>(hData)[0];
+			//baseMatrix.SetRandom();
+			T baseMatrix(0.5, 0.5, 0.5, 0.5);
+
+			#pragma omp parallel for schedule(static)
+			for (int i=0; i<vtVol*4; i++)
+				static_cast<T*>(hData)[i] = baseMatrix;
+
+			prof.stop();
+			double myGFlops = 0.0;
+			double myGBytes = 4.0 * vtVol * sizeof(T) / 1073741824.0;
+
+			add(myGFlops, myGBytes); 
+			prof.add(FullName(), myGFlops, myGBytes);
+
+			LogMsg  (VerbHigh, "%s reporting %lf GFlops %lf GBytes", FullName().c_str(), prof.Prof()[FullName()].GFlops(), prof.Prof()[FullName()].GBytes());
 		}
 
 		inline	size_t	SLength	() { return Ls;  }
@@ -489,7 +541,7 @@
 		}
 
 		inline void	Run()	override	{ SetRand(); }
-		inline void	Reset() override	{ Su2Prof::getProfiler(ProfGen).reset(Name()); }
+		inline void	Reset() override	{ Su2Prof::getProfiler(ProfGen).reset(FullName()); }
 	};
 
 	template<class T>
@@ -500,8 +552,8 @@
 	template<class T>
 	inline	auto	PointParity(Coord<Colored> pt, Lattice<T,Colored> &myLat) {
 
-		ParityType  pBase = (ParityType)  ((  pt.x[0]      +  pt.x[1]      +  pt.x[2]      +  pt.x[3]     ) & 1);
-		Parity2Type p2    = (Parity2Type) ((((pt.x[0] & 2) + (pt.x[1] & 2) + (pt.x[2] & 2) + (pt.x[3] & 2)) & 2 ) >> 1);
+		ParityType  pBase = (ParityType)  (( pt.x[0]       +  pt.x[1]      +  pt.x[2]      +  pt.x[3]     ) & 1);
+		Parity2Type p2    = (Parity2Type) ((((pt.x[0] & 2) + (pt.x[1] & 2) + (pt.x[2] & 2) + (pt.x[3] & 2)) & 2) >> 1);
 
 		return	(ParityColor) (p2 + ((pt.x[1]&1)<<1) + ((pt.x[2]&1)<<2) + ((pt.x[3]&1)<<3) + (pBase<<4));
 	}

@@ -11,66 +11,105 @@
 #include "utils/misc.h"
 #include "utils/unfolder.h"
 
+#define	Ordering Colored // EvenOdd
+
 using namespace Simd;
 
 int	main (int argc, char *argv[]) {
 	initSu2 (argc, argv);
 
-	Lattice<Su2<float>,EvenOdd> *myLat = new Lattice<Su2<float>,EvenOdd>(16, 16);
+	Lattice<Su2<float>,Ordering> *myLat = new Lattice<Su2<float>,Ordering>(16, 16);
 	myLat->SetRand();
 
-	Su2Action::Action<Su2<float>,EvenOdd> wAction(*myLat, 2.0, 0.0);
+	Su2Action::Action<Su2<float>,Ordering> wAction(*myLat, 2.0, 0.0);
 	Su2Tune::Tune(wAction);
 	auto	sAct = wAction.allPts();
 	printf("Plaquette value: %le\n", sAct/(6.*myLat->Volume()));
 
-	Su2Action::Plaquette<Su2<float>,EvenOdd> wPlq(*myLat);
+	Su2Action::Plaquette<Su2<float>,Ordering> wPlq(*myLat);
 	Su2Tune::Tune(wPlq);
 	printf("Plaquette value: %le\n", wPlq()/(6.*myLat->Volume()));
 
-	printf("Coordinate test\n");
+	printf("Scalar coordinate test: index to coordinate to index\n");
 	for (size_t i=0; i<myLat->oVol(); i++) {
-		Coord<EvenOdd> pt (i, myLat->vLength());
+		Coord<Ordering> pt (i, myLat->vLength());
 
 		//printf("Index %05zu --> %05zu Col %02d (%02d %02d %02d %02d)\n", i, pt.Index(myLat->vLength()), PointParity(pt,  *myLat), pt.x[0], pt.x[1], pt.x[2], pt.x[3]);
 		if (i != pt.Index(myLat->vLength()))
 			printf("\n\nVAYA CAGADA %zu %zu\n\n", i, pt.Index(myLat->vLength()));
-		//fflush(stdout);
+		fflush(stdout);
 	}
 	printf("Done\n");
 
+	printf("Scalar coordinate test: coordinate to index to coordinate\n");
+	for (size_t it=0; it<myLat->vLength()[3]; it++) {
+	  for (size_t iz=0; iz<myLat->vLength()[2]; iz++) {
+	    for (size_t iy=0; iy<myLat->vLength()[1]; iy++) {
+	      for (size_t ix=0; ix<myLat->vLength()[0]; ix++) {
+		Coord<Ordering> pt (ix, iy, iz, it);
+		auto idx = pt.Index(myLat->vLength());
+		Coord<Ordering> nt (idx, myLat->vLength());
+
+		if (pt != nt)
+			printf("\n\nVAYA CAGADA (%d %d %d %d) vs (%d %d %d %d)\n\n", pt.x[0], pt.x[1], pt.x[2], pt.x[3], nt.x[0], nt.x[1], nt.x[2], nt.x[3]);
+		fflush(stdout);
+	      }
+	    }
+	  }
+	}
+	printf("Done\n");
 	delete myLat;
 
-	Lattice<vSu2<Simd_f>,EvenOdd> *myVLat = new Lattice<vSu2<Simd_f>,EvenOdd>(16, 16);
+	Lattice<vSu2<Simd_f>,Ordering> *myVLat = new Lattice<vSu2<Simd_f>,Ordering>(16, 16);
 	myVLat->SetRand();
 
-	Su2Action::Action<vSu2<Simd_f>,EvenOdd> wVAction(*myVLat, 2.0, 0.0);
+	Su2Action::Action<vSu2<Simd_f>,Ordering> wVAction(*myVLat, 2.0, 0.0);
 	Su2Tune::Tune(wVAction);
 
-	Su2Action::Plaquette<vSu2<Simd_f>,EvenOdd> wvPlq(*myVLat);
+	Su2Action::Plaquette<vSu2<Simd_f>,Ordering> wvPlq(*myVLat);
 	Su2Tune::Tune(wvPlq);
 	printf("Plaquette value: %le\n", wvPlq()/(6.*myVLat->oVol()));
 
-	printf("Coordinate test\n");
+	printf("Vector coordinate test: index to coordinate to index\n");
 	for (size_t i=0; i<myVLat->oVol(); i++) {
-		Coord<EvenOdd> pt (i, myVLat->vLength());
+		Coord<Ordering> pt (i, myVLat->vLength());
 
-		//printf("Index %zu --> %zu (%02d %02d %02d %02d)\n", i, pt.Index(myVLat->vLength()), pt.x[0], pt.x[1], pt.x[2], pt.x[3]);
+		//printf("Index %05zu --> %05zu Cold %02d (%02d %02d %02d %02d)\n", i, pt.Index(myVLat->vLength()), PointParity(pt,  *myVLat), pt.x[0], pt.x[1], pt.x[2], pt.x[3]);
 		if (i != pt.Index(myVLat->vLength()))
 			printf("\n\nVAYA CAGADA %zu %zu\n\n", i, pt.Index(myVLat->vLength()));
-		//fflush(stdout);
+		fflush(stdout);
 	}
 	printf("Done\n");
 
+	printf("Vector coordinate test: coordinate to index to coordinate\n");
+	for (size_t it=0; it<myVLat->vLength()[3]; it++) {
+	  for (size_t iz=0; iz<myVLat->vLength()[2]; iz++) {
+	    for (size_t iy=0; iy<myVLat->vLength()[1]; iy++) {
+	      for (size_t ix=0; ix<myVLat->vLength()[0]; ix++) {
+		Coord<Ordering> pt (ix, iy, iz, it);
+		auto idx = pt.Index(myVLat->vLength());
+		Coord<Ordering> nt (idx, myVLat->vLength());
+		auto clp = PointParity(pt, *myVLat);
+		auto cln = PointParity(nt, *myVLat);
+
+		if (pt != nt || clp != cln)
+			printf("\n\nVAYA CAGADA (%d %d %d %d) vs (%d %d %d %d)\n\n", pt.x[0], pt.x[1], pt.x[2], pt.x[3], nt.x[0], nt.x[1], nt.x[2], nt.x[3]);
+		printf("\n\n(%d %d %d %d | %d) vs (%d %d %d %d | %d)\n\n", pt.x[0], pt.x[1], pt.x[2], pt.x[3], clp, nt.x[0], nt.x[1], nt.x[2], nt.x[3], cln);
+		fflush(stdout);
+	      }
+	    }
+	  }
+	}
+	printf("Done\n");
 	auto sVAct = wVAction.allPts();
 
 	printf("Vector Plaquette value: %le\n", sVAct/(6.*myVLat->Volume()));
 
-	Unfolder<vSu2<Simd_f>,EvenOdd>	munger(*myVLat);
+	Unfolder<vSu2<Simd_f>,Ordering>	munger(*myVLat);
 
-	Lattice<Su2<float>,EvenOdd> myULat = munger();
+	Lattice<Su2<float>,Ordering> myULat = munger();
 
-	Su2Action::Action<Su2<float>,EvenOdd> wUAction(myULat, 2.0, 0.0);
+	Su2Action::Action<Su2<float>,Ordering> wUAction(myULat, 2.0, 0.0);
 	auto sUAct = wUAction.allPts();
 
 	printf("Unfold Plaquette value: %le\n", sUAct/(6.*myULat.Volume()));

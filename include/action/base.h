@@ -26,11 +26,18 @@
 
 				Action (Lattice<T, cOrd> &lat, double beta, double theta) : lat(lat), beta(beta), theta(theta) {
 				InitBlockSize(lat.vLength());
+				SetName  (std::string("Action"));
+				SetColor (std::string(cOrd == Su2Enum::EvenOdd ? "EO" : "P32"));
+				SetPrec  (sizeof(typename T::sData) == 4 ? "float" : "double");
+				SetVec   (T::sWide != 1 ? Su2Enum::SystemVec : "None");
+				SetVolume(lat.SLength(), lat.TLength());
+				/*
 				std::string sName = std::to_string(T::sWide) + std::string(" ") + std::to_string(lat.SLength()) + std::string("x") + std::to_string(lat.TLength());
 				if (cOrd == Su2Enum::EvenOdd)
 					SetName(std::string("Action EO\t")  + sName);
 				else
 					SetName(std::string("Action P32\t") + sName);
+				*/
 			};
 
 			inline	double		Beta () { return beta;  }
@@ -50,6 +57,7 @@
 
 			// Sin beta
 			inline	double	allPts() {
+
 				Su2Prof::Profiler &prof = Su2Prof::getProfiler(ProfAction);
 				prof.start();
 
@@ -100,10 +108,11 @@
 				prof.stop();
 				double myGFlops = (cOrd == Colored ? 2197.0 : 517.0) * Latt().Volume() * 1e-9;
 				double myGBytes = (cOrd == Colored ?   96.0 :  24.0) * Latt().oVol()   * sizeof(T) / 1073741824.0;
-				add(myGFlops, myGBytes); 
-				prof.add(Name(), myGFlops, myGBytes);
 
-				LogMsg  (VerbHigh, "%s reporting %lf GFlops %lf GBytes", Name().c_str(), prof.Prof()[Name()].GFlops(), prof.Prof()[Name()].GBytes());
+				add(myGFlops, myGBytes); 
+				prof.add(FullName(), myGFlops, myGBytes);
+
+				LogMsg  (VerbHigh, "%s reporting %lf GFlops %lf GBytes", FullName().c_str(), prof.Prof()[FullName()].GFlops(), prof.Prof()[FullName()].GBytes());
 
 				return	total;
 			}
@@ -174,10 +183,8 @@
 					// Opposite direction
 					auto rPt = lat.nextPoint(mPt, (nu+4));
 					oPt = lat.nextPoint(nPt, (nu+4));
-					qPt = lat.nextPoint(rPt, (mu+4));
 					auto rIx = rPt.IdxPt(lat.vLength());
 					oIx = oPt.IdxPt(lat.vLength());
-					qIx = qPt.IdxPt(lat.vLength());
 
 					tmp  = !lat.Data(oIx, nu);
 					tmp *= !lat.Data(rIx, mu);
@@ -186,6 +193,9 @@
 					staple += tmp;
 
 					if (cOrd == Su2Enum::Colored) {
+						qPt = lat.nextPoint(rPt, (mu+4));
+						qIx = qPt.IdxPt(lat.vLength());
+
 						tmp  = !lat.Data(oIx, nu);
 						tmp *= !lat.Data(rIx, mu);
 						tmp *= !lat.Data(qIx, mu);
@@ -281,7 +291,7 @@
 			void	SaveState()	override	{}
 			void	RestoreState()	override	{}
 			inline	void	Run()	override	{ (*this).allPts(); }
-			inline void	Reset()	override	{ Su2Prof::getProfiler(ProfAction).reset(Name()); }
+			inline void	Reset()	override	{ Su2Prof::getProfiler(ProfAction).reset(FullName()); }
 		};
 
 	}

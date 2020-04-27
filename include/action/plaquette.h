@@ -20,7 +20,12 @@
 				Plaquette(Lattice<T,cOrd> &myLat) : myLat(myLat) {
 				InitBlockSize(myLat.vLength());
 				std::string sName = std::to_string(T::sWide) + std::string(" ") + std::to_string(myLat.SLength()) + std::string("x") + std::to_string(myLat.TLength());
-				SetName(std::string("Plaquette EO\t")  + sName);
+				//SetName(std::string("Plaquette EO\t")  + sName);
+				SetName  (std::string("Plaquette"));
+				SetColor (std::string(cOrd == Su2Enum::EvenOdd ? "EO" : "P32"));
+				SetPrec  (sizeof(typename T::sData) == 4 ? "float" : "double");
+				SetVec   (T::sWide != 1 ? Su2Enum::SystemVec : "None");
+				SetVolume(myLat.SLength(), myLat.TLength());
 			}
 
 			double	operator()()	{
@@ -87,16 +92,16 @@
 				double myGFlops = 517.0 * myLat.Volume() * 1e-9;
 				double myGBytes =  24.0 * myLat.oVol()   * sizeof(T) / 1073741824.0;
 				add(myGFlops, myGBytes); 
-				prof.add(Name(), myGFlops, myGBytes);
+				prof.add(FullName(), myGFlops, myGBytes);
 
-				LogMsg  (VerbHigh, "%s reporting %lf GFlops %lf GBytes", Name().c_str(), prof.Prof()[Name()].GFlops(), prof.Prof()[Name()].GBytes());
+				LogMsg  (VerbHigh, "%s reporting %lf GFlops %lf GBytes", FullName().c_str(), prof.Prof()[FullName()].GFlops(), prof.Prof()[FullName()].GBytes());
 				return	plq*cfPlq/(6.*myLat.Volume());
 			}
 
 			void	SaveState()	override	{}
 			void	RestoreState()	override	{}
 			inline	void	Run()	override	{ (*this)(); }
-			inline void	Reset() override	{ Su2Prof::getProfiler(ProfPlaq).reset(Name()); }
+			inline void	Reset() override	{ Su2Prof::getProfiler(ProfPlaq).reset(FullName()); }
 		};
 	}
 #endif
