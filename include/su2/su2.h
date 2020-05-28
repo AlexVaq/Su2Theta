@@ -127,6 +127,21 @@
 			return	(*this);
 		}
 
+		Su2	Sqrt() {
+			Su2	tmp;
+			Float	t0, d0;
+
+			t0 = sqrt(0.5*(a[0] + 1.0));
+			d0 = 0.5/t0;
+
+			tmp.a[0] = t0;
+			tmp.a[1] = a[1]*d0;
+			tmp.a[2] = a[2]*d0;
+			tmp.a[3] = a[3]*d0;
+
+			return	tmp;
+		}
+
 		Float	Norm() {
 			return	a[0]*a[0] + a[1]*a[1] + a[2]*a[2] + a[3]*a[3];
 		}

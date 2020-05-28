@@ -151,6 +151,21 @@
 			return	(*this);
 		}
 
+		vSu2	Sqrt() {
+			vSu2	tmp;
+			vFloat	t0, d0;
+
+			t0 = sqrt((a[0] + vFloat(1.))*0.5);
+			d0 = 0.5/t0;
+
+			tmp.a[0] = t0;
+			tmp.a[1] = a[1]*d0;
+			tmp.a[2] = a[2]*d0;
+			tmp.a[3] = a[3]*d0;
+
+			return	tmp;
+		}
+
 		vFloat	Norm() {
 			return	a[0]*a[0] + a[1]*a[1] + a[2]*a[2] + a[3]*a[3];
 		}
