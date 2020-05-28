@@ -125,7 +125,11 @@ inline _MData_	opCode(exp_pd, _MData_ x) {
 #endif
 	R1 = opCode(add_pd, Sl, opCode(add_pd, St, opCode(mul_pd, S, Q)));
 	//return	opCode(mul_pd, R2, R1);
-	return	opCode(and_pd, opCode(mul_pd, R2, R1), opCode(cmp_pd, x, opCode(set1_pd, -708.5), _CMP_NLT_UQ));
+#if	defined(__AVX512F__)
+	return	opCode(maskz_mul_pd, opCode(cmp_pd_mask, x, opCode(set1_pd, -708.5), _CMP_NLT_UQ), R2, R1);
+#else
+	return	opCode(and_pd, opCode(mul_pd, R2, R1), opCode(cmp_pd,      x, opCode(set1_pd, -708.5), _CMP_NLT_UQ));
+#endif
 
 }
 
